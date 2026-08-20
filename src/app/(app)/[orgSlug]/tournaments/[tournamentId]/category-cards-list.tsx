@@ -82,29 +82,38 @@ export function CategoryCardsList({
     SUNDAY: items.filter((c) => categoryDay(c.scheduledAt) === "SUNDAY").length,
     OTHER: items.filter((c) => categoryDay(c.scheduledAt) === "OTHER").length,
   };
-  const tabs: { key: DayFilter; label: string }[] = [
+  const tabs: { key: DayFilter; label: string; dot?: string }[] = [
     { key: "ALL", label: "Tous" },
-    { key: "SATURDAY", label: "Samedi" },
-    { key: "SUNDAY", label: "Dimanche" },
-    ...(counts.OTHER > 0 ? [{ key: "OTHER" as const, label: "Sans date / autres" }] : []),
+    { key: "SATURDAY", label: "Samedi", dot: "bg-accent-500" },
+    { key: "SUNDAY", label: "Dimanche", dot: "bg-brand-500" },
+    ...(counts.OTHER > 0 ? [{ key: "OTHER" as const, label: "Sans date", dot: "bg-navy-300" }] : []),
   ];
   const visible = tab === "ALL" ? items : items.filter((c) => categoryDay(c.scheduledAt) === tab);
 
   return (
     <>
-      <div className="flex flex-wrap gap-1.5">
+      <div className="inline-flex w-fit flex-wrap items-center gap-0.5 rounded-xl bg-surface-muted p-1 shadow-inner shadow-navy-950/[.03]">
         {tabs.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
             className={cn(
-              "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+              "flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-all duration-150",
               tab === t.key
-                ? "bg-navy-950 text-white"
-                : "bg-surface-muted text-navy-400 hover:bg-navy-950/10"
+                ? "bg-surface text-foreground shadow-sm shadow-navy-950/10"
+                : "text-navy-400 hover:text-foreground"
             )}
           >
-            {t.label} ({counts[t.key]})
+            {t.dot && <span className={cn("h-1.5 w-1.5 rounded-full", t.dot)} />}
+            {t.label}
+            <span
+              className={cn(
+                "rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums",
+                tab === t.key ? "bg-navy-950 text-white" : "bg-navy-950/[.08] text-navy-500"
+              )}
+            >
+              {counts[t.key]}
+            </span>
           </button>
         ))}
       </div>
