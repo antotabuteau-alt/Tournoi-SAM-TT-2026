@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { LinkButton } from "@/components/ui/link-button";
 import { BrandLogo } from "@/components/brand-logo";
+import { auth } from "@/auth";
 
 function ComingSoonTag() {
   return (
@@ -80,7 +82,10 @@ function BracketMockup() {
   );
 }
 
-export default function HomePage() {
+export default async function HomePage() {
+  const session = await auth();
+  if (session?.user) redirect("/dashboard");
+
   return (
     <div className="flex flex-1 flex-col bg-white">
       <div className="bg-navy-950 text-white">
