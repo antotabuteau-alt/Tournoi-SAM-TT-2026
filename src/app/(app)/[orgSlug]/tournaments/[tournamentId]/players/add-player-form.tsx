@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef } from "react";
 import { addPlayerAction } from "@/actions/players.actions";
 import type { ActionResult } from "@/lib/action-result";
 import { Input, Label } from "@/components/ui/input";
@@ -18,9 +18,19 @@ export function AddPlayerForm({
     ActionResult | null,
     FormData
   >(action, null);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  // Vide le formulaire après un ajout réussi : sans ça, les champs gardent
+  // les valeurs du joueur précédent et rien n'indique visuellement que
+  // l'ajout a bien eu lieu, en dehors du saut dans la liste triée.
+  useEffect(() => {
+    if (state && "success" in state) {
+      formRef.current?.reset();
+    }
+  }, [state]);
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form ref={formRef} action={formAction} className="flex flex-col gap-4">
       <div className="grid grid-cols-2 gap-4">
         <Label>
           Prénom

@@ -52,16 +52,16 @@ export default async function PlayersPage({
             {players.length === 0 ? (
               <p className="py-6 text-center text-sm text-navy-400">Aucun joueur pour le moment.</p>
             ) : (
-              <ul className="grid gap-x-4 sm:grid-cols-2">
+              <ul className="flex max-h-[32rem] flex-col divide-y divide-border overflow-y-auto">
                 {players.map((p) => (
                   <li
                     key={p.id}
-                    className="flex items-center justify-between border-b border-border py-2 text-sm last:border-0"
+                    className="flex items-center justify-between gap-3 py-2 text-sm"
                   >
-                    <span>
+                    <span className="truncate">
                       {p.firstName} {p.lastName}
                     </span>
-                    <span className="truncate text-xs text-navy-400">{p.club}</span>
+                    <span className="shrink-0 truncate text-xs text-navy-400">{p.club}</span>
                   </li>
                 ))}
               </ul>
