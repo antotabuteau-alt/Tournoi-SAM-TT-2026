@@ -8,6 +8,57 @@ import { addPlayerSchema, csvPlayerRowSchema } from "@/lib/validators/player.sch
 import { checkCsvImportRateLimit } from "@/lib/rate-limit";
 import type { ActionResult } from "@/lib/action-result";
 
+const TEST_FIRST_NAMES = [
+  "Lucas", "Emma", "Hugo", "Léa", "Louis", "Chloé", "Jules", "Manon",
+  "Adam", "Camille", "Nathan", "Sarah", "Enzo", "Julie", "Théo", "Inès",
+  "Gabriel", "Zoé", "Raphaël", "Jade", "Arthur", "Louise", "Léon", "Alice",
+  "Maël", "Rose", "Noah", "Anna", "Tom", "Lina",
+];
+const TEST_LAST_NAMES = [
+  "Martin", "Bernard", "Dubois", "Thomas", "Robert", "Richard", "Petit", "Durand",
+  "Leroy", "Moreau", "Simon", "Laurent", "Lefebvre", "Michel", "Garcia", "David",
+  "Roux", "Vincent", "Fournier", "Girard", "Bonnet", "Dupont", "Lambert", "Fontaine",
+  "Rousseau", "Blanc", "Guerin", "Muller", "Henry", "Roussel",
+];
+const TEST_CLUBS = ["SAM Tennis de Table", "AS Bordeaux TT", "Pongiste Club Mérignac", "TT Talence", null];
+
+export async function generateTestPlayersAction(
+  orgSlug: string,
+  tournamentId: string,
+  count: number
+): Promise<ActionResult & { created?: number }> {
+  const { organization } = await requireMembership(orgSlug, "ORGANIZER");
+
+  const tournament = await prisma.tournament.findFirst({
+    where: { id: tournamentId, organizationId: organization.id },
+  });
+  if (!tournament) return { error: "Tournoi introuvable." };
+
+  if (!Number.isInteger(count) || count < 1 || count > 128) {
+    return { error: "Nombre de joueurs invalide (1 à 128)." };
+  }
+
+  const existingCount = await prisma.player.count({ where: { tournamentId } });
+  const offset = existingCount + Math.floor(Math.random() * 1000);
+
+  const data = Array.from({ length: count }, (_, i) => {
+    const n = offset + i;
+    return {
+      organizationId: organization.id,
+      tournamentId,
+      firstName: TEST_FIRST_NAMES[n % TEST_FIRST_NAMES.length],
+      lastName: TEST_LAST_NAMES[Math.floor(n / TEST_FIRST_NAMES.length) % TEST_LAST_NAMES.length] ?? TEST_LAST_NAMES[n % TEST_LAST_NAMES.length],
+      club: TEST_CLUBS[n % TEST_CLUBS.length],
+      licenseNumber: String(900000 + n),
+    };
+  });
+
+  await prisma.player.createMany({ data });
+
+  revalidatePath(`/${orgSlug}/tournaments/${tournamentId}/players`);
+  return { success: true, created: count };
+}
+
 async function getClientIp(): Promise<string> {
   const h = await headers();
   return h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";

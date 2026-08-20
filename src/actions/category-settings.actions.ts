@@ -26,7 +26,21 @@ export async function updateCategoryScheduleAction(
   if (typeof date !== "string" || !date || typeof time !== "string" || !time) {
     return { error: "Date et heure requises." };
   }
-  const scheduledAt = new Date(`${date}T${time}`);
+  // Les chiffres saisis (heure de la salle, en France) sont stockés tels quels,
+  // sans conversion de fuseau horaire, pour ne jamais dériver entre la saisie
+  // et l'affichage quel que soit le fuseau du serveur (Vercel tourne en UTC).
+  const [year, month, day] = date.split("-").map(Number);
+  const [hour, minute] = time.split(":").map(Number);
+  if (
+    !Number.isInteger(year) ||
+    !Number.isInteger(month) ||
+    !Number.isInteger(day) ||
+    !Number.isInteger(hour) ||
+    !Number.isInteger(minute)
+  ) {
+    return { error: "Date invalide." };
+  }
+  const scheduledAt = new Date(Date.UTC(year, month - 1, day, hour, minute));
   if (Number.isNaN(scheduledAt.getTime())) {
     return { error: "Date invalide." };
   }

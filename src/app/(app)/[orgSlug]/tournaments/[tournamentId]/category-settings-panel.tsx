@@ -1,12 +1,19 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   updateCategoryScheduleAction,
   updateCategoryBracketTypeAction,
   updateCategoryPoolRulesAction,
 } from "@/actions/category-settings.actions";
+import { TimeInput } from "@/components/ui/time-input";
+import {
+  wallClockDateInput,
+  wallClockTimeInput,
+  nowAsWallClockDateInput,
+  nowAsWallClockTimeInput,
+} from "@/lib/wall-clock";
 
 type BracketType = "CLASSIC" | "INTEGRAL_BY_LEVEL" | "INTEGRAL_OFFICIAL_FFTT" | "MAIN_PLUS_CONSOLATION";
 
@@ -44,11 +51,11 @@ const BRACKET_TYPES: {
 
 function toDateInputValue(d: Date | null): string {
   if (!d) return "";
-  return d.toISOString().slice(0, 10);
+  return wallClockDateInput(d);
 }
 function toTimeInputValue(d: Date | null): string {
-  if (!d) return "";
-  return d.toISOString().slice(11, 16);
+  if (!d) return "08:30";
+  return wallClockTimeInput(d);
 }
 
 export function CategorySettingsPanel({
@@ -81,6 +88,14 @@ export function CategorySettingsPanel({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [saved, setSaved] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const keys = Object.keys(saved).filter((k) => saved[k]);
+    if (keys.length === 0) return;
+    const t = setTimeout(() => setSaved({}), 2200);
+    return () => clearTimeout(t);
+  }, [saved]);
 
   const [date, setDate] = useState(toDateInputValue(scheduledAt));
   const [time, setTime] = useState(toTimeInputValue(scheduledAt));
@@ -105,12 +120,14 @@ export function CategorySettingsPanel({
     formData: FormData
   ) {
     setErrors((e) => ({ ...e, [key]: "" }));
+    setSaved((s) => ({ ...s, [key]: false }));
     startTransition(async () => {
       const res = await action(formData);
       if ("error" in res) {
         setErrors((e) => ({ ...e, [key]: res.error }));
         return;
       }
+      setSaved((s) => ({ ...s, [key]: true }));
       router.refresh();
     });
   }
@@ -147,25 +164,19 @@ export function CategorySettingsPanel({
               onChange={(e) => setDate(e.target.value)}
               className="flex-1 rounded-lg border border-border px-3 py-2 text-sm"
             />
-            <input
-              type="time"
-              name="time"
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-              className="w-28 rounded-lg border border-border px-3 py-2 text-sm"
-            />
+            <TimeInput name="time" value={time} onChange={setTime} />
           </div>
           <div className="flex gap-2 text-xs">
             <button
               type="button"
-              onClick={() => setDate(new Date().toISOString().slice(0, 10))}
+              onClick={() => setDate(nowAsWallClockDateInput())}
               className="rounded-md border border-border px-2 py-1 font-medium hover:bg-surface-muted"
             >
               Aujourd&apos;hui
             </button>
             <button
               type="button"
-              onClick={() => setTime(new Date().toISOString().slice(11, 16))}
+              onClick={() => setTime(nowAsWallClockTimeInput())}
               className="rounded-md border border-border px-2 py-1 font-medium hover:bg-surface-muted"
             >
               Maintenant
@@ -177,7 +188,7 @@ export function CategorySettingsPanel({
             disabled={isPending}
             className="self-start rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50"
           >
-            💾 Enregistrer
+            {saved.schedule ? "✓ Enregistré" : "💾 Enregistrer"}
           </button>
         </form>
 
@@ -248,7 +259,7 @@ export function CategorySettingsPanel({
             disabled={isPending}
             className="self-start rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50"
           >
-            💾 Enregistrer le type
+            {saved.type ? "✓ Enregistré" : "💾 Enregistrer le type"}
           </button>
         </form>
 
@@ -346,7 +357,7 @@ export function CategorySettingsPanel({
             disabled={isPending}
             className="self-start rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50"
           >
-            💾 Enregistrer les règles
+            {saved.rules ? "✓ Enregistré" : "💾 Enregistrer les règles"}
           </button>
         </form>
       </div>

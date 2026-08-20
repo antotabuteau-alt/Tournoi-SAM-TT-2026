@@ -6,6 +6,7 @@ import { LinkButton } from "@/components/ui/link-button";
 import { StageTracker } from "@/components/ui/stage-tracker";
 import { getCategoryStages } from "@/lib/category-stages";
 import { categoryCta } from "@/lib/category-cta";
+import { formatWallClockDateTime } from "@/lib/wall-clock";
 import { CategoryActionsMenu } from "./category-actions-menu";
 
 const FORMAT_LABELS: Record<string, string> = {
@@ -42,6 +43,16 @@ export function CategoryCardsList({
 }) {
   const [items, setItems] = useState(categories);
 
+  // Resynchronise avec les données serveur fraîches (ex: après router.refresh()
+  // suite à une sauvegarde de réglages) — sans ça, le state local figé au premier
+  // rendu masquerait indéfiniment les changements venus du serveur. Pattern
+  // "adjusting state on prop change" recommandé par React (pas d'effect).
+  const [prevCategories, setPrevCategories] = useState(categories);
+  if (categories !== prevCategories) {
+    setPrevCategories(categories);
+    setItems(categories);
+  }
+
   if (items.length === 0) {
     return (
       <Card className="px-6 py-10 text-center text-navy-400">
@@ -62,7 +73,10 @@ export function CategoryCardsList({
                   <h3 className="font-semibold">{c.name}</h3>
                   <span className="text-xs text-navy-400">{FORMAT_LABELS[c.format]}</span>
                 </div>
-                <p className="text-xs text-navy-400">{c.registrationCount} joueur(s)</p>
+                <p className="text-xs text-navy-400">
+                  {c.registrationCount} joueur(s)
+                  {c.scheduledAt && <> · prévu le {formatWallClockDateTime(c.scheduledAt)}</>}
+                </p>
               </div>
               <div className="flex items-center gap-1">
                 <LinkButton href={cta.href} size="sm">{cta.label}</LinkButton>
