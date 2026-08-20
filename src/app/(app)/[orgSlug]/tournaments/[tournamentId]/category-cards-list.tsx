@@ -7,7 +7,21 @@ import { StageTracker } from "@/components/ui/stage-tracker";
 import { getCategoryStages } from "@/lib/category-stages";
 import { categoryCta } from "@/lib/category-cta";
 import { formatWallClockDateTime } from "@/lib/wall-clock";
+import { cn } from "@/lib/cn";
 import { CategoryActionsMenu } from "./category-actions-menu";
+
+type DayFilter = "ALL" | "SATURDAY" | "SUNDAY" | "OTHER";
+
+// Jour de la semaine dérivé de scheduledAt en lisant les chiffres "muraux"
+// (getUTCDay), cohérent avec le reste de l'app qui ne fait jamais de vraie
+// conversion de fuseau horaire sur ces dates de tableau.
+function categoryDay(scheduledAt: Date | null): DayFilter {
+  if (!scheduledAt) return "OTHER";
+  const day = scheduledAt.getUTCDay();
+  if (day === 6) return "SATURDAY";
+  if (day === 0) return "SUNDAY";
+  return "OTHER";
+}
 
 const FORMAT_LABELS: Record<string, string> = {
   POOLS_THEN_BRACKET: "Poules + tableau final",
@@ -42,6 +56,7 @@ export function CategoryCardsList({
   categories: CategoryCardData[];
 }) {
   const [items, setItems] = useState(categories);
+  const [tab, setTab] = useState<DayFilter>("ALL");
 
   // Resynchronise avec les données serveur fraîches (ex: après router.refresh()
   // suite à une sauvegarde de réglages) — sans ça, le state local figé au premier
@@ -61,9 +76,46 @@ export function CategoryCardsList({
     );
   }
 
+  const counts = {
+    ALL: items.length,
+    SATURDAY: items.filter((c) => categoryDay(c.scheduledAt) === "SATURDAY").length,
+    SUNDAY: items.filter((c) => categoryDay(c.scheduledAt) === "SUNDAY").length,
+    OTHER: items.filter((c) => categoryDay(c.scheduledAt) === "OTHER").length,
+  };
+  const tabs: { key: DayFilter; label: string }[] = [
+    { key: "ALL", label: "Tous" },
+    { key: "SATURDAY", label: "Samedi" },
+    { key: "SUNDAY", label: "Dimanche" },
+    ...(counts.OTHER > 0 ? [{ key: "OTHER" as const, label: "Sans date / autres" }] : []),
+  ];
+  const visible = tab === "ALL" ? items : items.filter((c) => categoryDay(c.scheduledAt) === tab);
+
   return (
     <>
-      {items.map((c) => {
+      <div className="flex flex-wrap gap-1.5">
+        {tabs.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={cn(
+              "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+              tab === t.key
+                ? "bg-navy-950 text-white"
+                : "bg-surface-muted text-navy-400 hover:bg-navy-950/10"
+            )}
+          >
+            {t.label} ({counts[t.key]})
+          </button>
+        ))}
+      </div>
+
+      {visible.length === 0 && (
+        <Card className="px-6 py-10 text-center text-navy-400">
+          Aucun tableau dans cet onglet.
+        </Card>
+      )}
+
+      {visible.map((c) => {
         const cta = categoryCta(orgSlug, tournamentId, c.id, c.status, c.format, c.registrationCount);
         return (
           <Card key={c.id} className="p-4">
