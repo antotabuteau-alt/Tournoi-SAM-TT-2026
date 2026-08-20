@@ -47,17 +47,31 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.sub = user.id;
         token.tokenVersion = (user as { tokenVersion: number }).tokenVersion;
+        token.tokenVersionCheckedAt = Date.now();
+        return token;
       }
 
       // Révocation : si le tokenVersion en base a changé (déconnexion forcée,
-      // changement de mot de passe), on invalide le JWT existant.
-      if (token.sub) {
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.sub },
-          select: { tokenVersion: true },
-        });
-        if (!dbUser || dbUser.tokenVersion !== token.tokenVersion) {
-          return {};
+      // changement de mot de passe), on invalide le JWT existant. On ne
+      // revérifie qu'au bout de quelques minutes (et pas à chaque requête,
+      // le callback jwt étant appelé à chaque page/Server Action) pour
+      // limiter la charge DB — et surtout, une erreur DB transitoire ne doit
+      // jamais déconnecter l'utilisateur : on fait confiance au JWT existant
+      // plutôt que de le vider sur un simple souci réseau.
+      const checkedAt = typeof token.tokenVersionCheckedAt === "number" ? token.tokenVersionCheckedAt : 0;
+      const staleAfterMs = 5 * 60 * 1000;
+      if (token.sub && Date.now() - checkedAt > staleAfterMs) {
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.sub },
+            select: { tokenVersion: true },
+          });
+          if (!dbUser) return {};
+          if (dbUser.tokenVersion !== token.tokenVersion) return {};
+          token.tokenVersionCheckedAt = Date.now();
+        } catch {
+          // DB indisponible : on garde le token tel quel plutôt que de
+          // déconnecter l'utilisateur pour un incident transitoire.
         }
       }
 
