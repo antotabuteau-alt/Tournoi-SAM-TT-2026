@@ -22,6 +22,7 @@ export default async function OrgLayout({
     <AppShell
       orgSlug={organization.slug}
       orgName={organization.name}
+      orgLogoUrl={organization.logoUrl}
       userName={user.name ?? user.email ?? "Utilisateur"}
       tournaments={tournaments}
     >

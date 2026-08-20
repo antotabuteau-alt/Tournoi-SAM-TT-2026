@@ -15,12 +15,14 @@ interface TournamentNavItem {
 export function AppShell({
   orgSlug,
   orgName,
+  orgLogoUrl,
   userName,
   tournaments,
   children,
 }: {
   orgSlug: string;
   orgName: string;
+  orgLogoUrl?: string | null;
   userName: string;
   tournaments: TournamentNavItem[];
   children: React.ReactNode;
@@ -46,12 +48,17 @@ export function AppShell({
 
   const sidebarContent = (
     <>
-      <div className="flex items-center gap-3 px-5 py-5">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-lg font-bold text-navy-900">
-          {orgName.slice(0, 1).toUpperCase()}
+      <Link href={`/${orgSlug}/settings`} className="flex items-center gap-3 px-5 py-5 hover:opacity-80">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white text-lg font-bold text-navy-900">
+          {orgLogoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={orgLogoUrl} alt="" className="h-full w-full object-contain" />
+          ) : (
+            orgName.slice(0, 1).toUpperCase()
+          )}
         </div>
         <span className="truncate font-semibold text-white">{orgName}</span>
-      </div>
+      </Link>
 
       <nav className="flex-1 overflow-y-auto px-3 pb-4">
         <div className="px-2 pb-2 text-[11px] font-semibold tracking-wider text-navy-400 uppercase">

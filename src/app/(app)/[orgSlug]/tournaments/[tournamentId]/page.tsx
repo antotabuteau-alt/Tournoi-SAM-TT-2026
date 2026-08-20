@@ -106,7 +106,11 @@ export default async function TournamentPage({
                   </div>
                   <div className="mt-4">
                     <StageTracker
-                      stages={getCategoryStages(c.status, c.format, c._count.registrations)}
+                      stages={getCategoryStages(c.status, c.format, c._count.registrations, {
+                        orgSlug,
+                        tournamentId,
+                        categoryId: c.id,
+                      })}
                     />
                   </div>
                 </Card>

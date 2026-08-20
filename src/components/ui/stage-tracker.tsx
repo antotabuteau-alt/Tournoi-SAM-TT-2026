@@ -1,8 +1,10 @@
+import Link from "next/link";
 import { cn } from "@/lib/cn";
 
 export interface Stage {
   label: string;
   status: "done" | "active" | "pending";
+  href?: string;
 }
 
 const NODE_STYLES = {
@@ -20,8 +22,8 @@ const LABEL_STYLES = {
 export function StageTracker({ stages }: { stages: Stage[] }) {
   return (
     <div className="flex flex-wrap items-center gap-y-2">
-      {stages.map((stage, i) => (
-        <div key={stage.label} className="flex items-center">
+      {stages.map((stage, i) => {
+        const content = (
           <div className="flex items-center gap-2">
             <span
               className={cn(
@@ -35,16 +37,28 @@ export function StageTracker({ stages }: { stages: Stage[] }) {
               {stage.label}
             </span>
           </div>
-          {i < stages.length - 1 && (
-            <span
-              className={cn(
-                "mx-2 h-0.5 w-6 shrink-0 sm:w-10",
-                stage.status === "done" ? "bg-success-500" : "bg-border"
-              )}
-            />
-          )}
-        </div>
-      ))}
+        );
+
+        return (
+          <div key={stage.label} className="flex items-center">
+            {stage.href ? (
+              <Link href={stage.href} className="rounded-md transition-opacity hover:opacity-70">
+                {content}
+              </Link>
+            ) : (
+              content
+            )}
+            {i < stages.length - 1 && (
+              <span
+                className={cn(
+                  "mx-2 h-0.5 w-6 shrink-0 sm:w-10",
+                  stage.status === "done" ? "bg-success-500" : "bg-border"
+                )}
+              />
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

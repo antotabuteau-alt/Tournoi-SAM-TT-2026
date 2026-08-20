@@ -58,6 +58,7 @@ model Organization {
   id        String   @id @default(cuid())
   name      String
   slug      String   @unique
+  logoUrl   String?  @db.Text // data: URI (petit logo) ou URL externe
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

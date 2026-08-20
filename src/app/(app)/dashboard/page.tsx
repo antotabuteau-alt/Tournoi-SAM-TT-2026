@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/card";
@@ -12,6 +13,11 @@ export default async function DashboardPage() {
     include: { organization: true },
     orderBy: { createdAt: "asc" },
   });
+
+  // Un seul club : on saute directement dedans, pas besoin de choisir.
+  if (memberships.length === 1) {
+    redirect(`/${memberships[0].organization.slug}`);
+  }
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center gap-6 px-6 py-12">
