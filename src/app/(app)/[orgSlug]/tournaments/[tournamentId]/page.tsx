@@ -58,7 +58,7 @@ export default async function TournamentPage({
 
           <details className="group rounded-2xl border border-dashed border-border bg-surface-muted p-4">
             <summary className="cursor-pointer font-medium text-brand-600">
-              + Ajouter une catégorie
+              + Ajouter un tableau
             </summary>
             <div className="mt-4">
               <CategoryForm orgSlug={orgSlug} tournamentId={tournamentId} />

@@ -102,8 +102,8 @@ export async function updateCategoryPoolRulesAction(
 
   const poolCountRaw = formData.get("poolCount");
   const poolCount = Number(poolCountRaw);
-  if (!Number.isInteger(poolCount) || poolCount < 1 || poolCount > 64) {
-    return { error: "Nombre de poules invalide." };
+  if (!Number.isInteger(poolCount) || poolCount < 1 || poolCount > 16) {
+    return { error: "Nombre de poules invalide (16 maximum)." };
   }
 
   const tableStartRaw = formData.get("tableRangeStart");

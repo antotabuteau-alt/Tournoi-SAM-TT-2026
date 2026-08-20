@@ -111,7 +111,7 @@ export function CategorySettingsPanel({
 
   function recommendedPoolCount(count: number): number {
     if (count <= 0) return 1;
-    return Math.max(1, Math.ceil(count / 4));
+    return Math.min(16, Math.max(1, Math.ceil(count / 4)));
   }
 
   function runAction(
@@ -277,7 +277,7 @@ export function CategorySettingsPanel({
                   type="number"
                   name="poolCount"
                   min={1}
-                  max={64}
+                  max={16}
                   value={pools}
                   onChange={(e) => {
                     const v = Number(e.target.value);

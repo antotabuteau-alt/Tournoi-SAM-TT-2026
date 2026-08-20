@@ -111,7 +111,7 @@ export function CategoryCardsList({
           </Link>
         </div>
         <Card className="px-6 py-10 text-center text-navy-400">
-          Aucune catégorie pour le moment.
+          Aucun tableau pour le moment.
         </Card>
       </div>
     );

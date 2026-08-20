@@ -61,7 +61,7 @@ export function CategoryForm({
       )}
 
       <Button type="submit" disabled={isPending} className="w-fit">
-        {isPending ? "Création..." : "Ajouter la catégorie"}
+        {isPending ? "Création..." : "Ajouter le tableau"}
       </Button>
     </form>
   );
