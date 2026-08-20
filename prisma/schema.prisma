@@ -1,0 +1,303 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Enums ----------
+
+enum MembershipRole {
+  OWNER
+  ADMIN
+  ORGANIZER
+}
+
+enum TournamentStatus {
+  DRAFT
+  REGISTRATION_OPEN
+  POOLS_IN_PROGRESS
+  POOLS_DONE
+  BRACKET_IN_PROGRESS
+  FINISHED
+  ARCHIVED
+}
+
+enum CategoryFormat {
+  POOLS_THEN_BRACKET
+  DIRECT_BRACKET
+  POOLS_ONLY
+}
+
+enum CategoryStatus {
+  DRAFT
+  POOLS_IN_PROGRESS
+  POOLS_DONE
+  BRACKET_IN_PROGRESS
+  FINISHED
+}
+
+enum MatchType {
+  POOL
+  BRACKET
+}
+
+enum MatchStatus {
+  SCHEDULED
+  IN_PROGRESS
+  DONE
+  WALKOVER
+  BYE
+}
+
+// ---------- Tenant & Auth ----------
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships Membership[]
+  tournaments Tournament[]
+  secrets     OrganizationSecret[]
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  tokenVersion Int      @default(0) // incrémenté pour révoquer tous les JWT existants (déconnexion forcée)
+  createdAt    DateTime @default(now())
+
+  memberships Membership[]
+  sessions    Session[]
+  accounts    Account[]
+}
+
+model Membership {
+  id             String         @id @default(cuid())
+  userId         String
+  organizationId String
+  role           MembershipRole @default(ORGANIZER)
+  createdAt      DateTime       @default(now())
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+}
+
+// Modèles standards attendus par @auth/prisma-adapter
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Prêt pour la phase 2 (HelloAsso) : valeurs chiffrées, jamais stockées en clair
+model OrganizationSecret {
+  id             String   @id @default(cuid())
+  organizationId String
+  key            String // ex: "helloasso_client_id", "helloasso_client_secret"
+  valueEncrypted String // AES-256-GCM, base64
+  keyVersion     Int      @default(1)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, key])
+}
+
+// ---------- Domaine tournoi ----------
+
+model Tournament {
+  id             String           @id @default(cuid())
+  organizationId String
+  name           String
+  date           DateTime
+  location       String?
+  status         TournamentStatus @default(DRAFT)
+  publicSlug     String           @unique // nanoid non-devinable, page publique + QR
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  categories   Category[]
+  players      Player[]
+
+  @@index([organizationId])
+}
+
+model Category {
+  id                  String         @id @default(cuid())
+  organizationId      String // dénormalisé : défense en profondeur pour l'isolation tenant
+  tournamentId        String
+  name                String // "Simple Messieurs", "Double Dames"...
+  format              CategoryFormat @default(POOLS_THEN_BRACKET)
+  poolTargetSize      Int? // ex: 4 joueurs/poule visés
+  poolQualifiersCount Int            @default(2)
+  bestOfSets          Int            @default(3) // 3 ou 5 manches
+  status              CategoryStatus @default(DRAFT)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  tournament    Tournament             @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  registrations CategoryRegistration[]
+  poolGroups    PoolGroup[]
+  bracket       Bracket?
+
+  @@index([tournamentId])
+  @@index([organizationId])
+}
+
+model Player {
+  id             String   @id @default(cuid())
+  organizationId String
+  tournamentId   String
+  firstName      String
+  lastName       String
+  club           String?
+  licenseNumber  String?
+  email          String?
+  phone          String?
+  createdAt      DateTime @default(now())
+
+  tournament    Tournament             @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  registrations CategoryRegistration[]
+
+  @@index([tournamentId])
+  @@index([organizationId])
+}
+
+model CategoryRegistration {
+  id         String   @id @default(cuid())
+  categoryId String
+  playerId   String
+  seed       Int? // tête de série
+  createdAt  DateTime @default(now())
+
+  category        Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  player          Player       @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  poolMemberships PoolMember[]
+  matchesAsP1     Match[]      @relation("MatchPlayer1")
+  matchesAsP2     Match[]      @relation("MatchPlayer2")
+  matchesWon      Match[]      @relation("MatchWinner")
+
+  @@unique([categoryId, playerId])
+  @@index([categoryId])
+}
+
+model PoolGroup {
+  id         String   @id @default(cuid())
+  categoryId String
+  name       String // "Poule A"
+  createdAt  DateTime @default(now())
+
+  category Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  members  PoolMember[]
+  matches  Match[]
+
+  @@index([categoryId])
+}
+
+model PoolMember {
+  id             String @id @default(cuid())
+  poolGroupId    String
+  registrationId String
+  seedInPool     Int?
+
+  poolGroup    PoolGroup            @relation(fields: [poolGroupId], references: [id], onDelete: Cascade)
+  registration CategoryRegistration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+
+  @@unique([poolGroupId, registrationId])
+}
+
+model Bracket {
+  id         String   @id @default(cuid())
+  categoryId String   @unique
+  drawSize   Int // puissance de 2
+  createdAt  DateTime @default(now())
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  matches  Match[]
+}
+
+// Match unifié (poule ET tableau final) pour réutiliser un seul moteur de saisie de score
+model Match {
+  id             String      @id @default(cuid())
+  organizationId String
+  type           MatchType
+  poolGroupId    String?
+  bracketId      String?
+  round          Int? // bracket uniquement : 1 = premier tour...
+  position       Int? // ordre d'affichage dans le tour
+  player1Id      String?
+  player2Id      String?
+  winnerId       String?
+  status         MatchStatus @default(SCHEDULED)
+  nextMatchId    String?
+  nextMatchSlot  Int? // 1 ou 2 : emplacement du vainqueur au tour suivant
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  poolGroup       PoolGroup?            @relation(fields: [poolGroupId], references: [id], onDelete: Cascade)
+  bracket         Bracket?              @relation(fields: [bracketId], references: [id], onDelete: Cascade)
+  player1         CategoryRegistration? @relation("MatchPlayer1", fields: [player1Id], references: [id])
+  player2         CategoryRegistration? @relation("MatchPlayer2", fields: [player2Id], references: [id])
+  winner          CategoryRegistration? @relation("MatchWinner", fields: [winnerId], references: [id])
+  nextMatch       Match?                @relation("MatchProgression", fields: [nextMatchId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  previousMatches Match[]               @relation("MatchProgression")
+  sets            SetScore[]
+
+  @@index([poolGroupId])
+  @@index([bracketId])
+  @@index([organizationId])
+  @@index([nextMatchId])
+}
+
+model SetScore {
+  id            String @id @default(cuid())
+  matchId       String
+  setNumber     Int
+  player1Points Int
+  player2Points Int
+
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@unique([matchId, setNumber])
+}
