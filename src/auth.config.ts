@@ -13,6 +13,7 @@ function isPublicPath(pathname: string): boolean {
 }
 
 export const authConfig = {
+  trustHost: true,
   pages: {
     signIn: "/login",
   },
