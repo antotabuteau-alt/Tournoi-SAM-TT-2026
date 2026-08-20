@@ -10,7 +10,7 @@ export default async function OrgLayout({
   params: Promise<{ orgSlug: string }>;
 }) {
   const { orgSlug } = await params;
-  const { organization } = await requireMembership(orgSlug);
+  const { organization, user } = await requireMembership(orgSlug);
 
   const tournaments = await prisma.tournament.findMany({
     where: { organizationId: organization.id },
@@ -19,7 +19,12 @@ export default async function OrgLayout({
   });
 
   return (
-    <AppShell orgSlug={organization.slug} orgName={organization.name} tournaments={tournaments}>
+    <AppShell
+      orgSlug={organization.slug}
+      orgName={organization.name}
+      userName={user.name ?? user.email ?? "Utilisateur"}
+      tournaments={tournaments}
+    >
       {children}
     </AppShell>
   );

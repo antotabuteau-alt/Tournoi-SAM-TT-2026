@@ -7,6 +7,7 @@ import { LinkButton } from "@/components/ui/link-button";
 import { StatTile } from "@/components/ui/stat-tile";
 import { StageTracker } from "@/components/ui/stage-tracker";
 import { getCategoryStages } from "@/lib/category-stages";
+import { TournamentToolbar } from "./tournament-toolbar";
 
 const FORMAT_LABELS: Record<string, string> = {
   POOLS_THEN_BRACKET: "Poules + tableau final",
@@ -58,80 +59,71 @@ export default async function TournamentPage({
   if (!tournament) notFound();
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-6 py-8">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">{tournament.name}</h1>
-          <p className="text-sm text-navy-400">
-            {tournament.date.toLocaleDateString("fr-FR")}
-            {tournament.location ? ` · ${tournament.location}` : ""}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <LinkButton href={`/${orgSlug}/tournaments/${tournamentId}/players`} variant="outline">
-            👥 Joueurs
-          </LinkButton>
-          <LinkButton href={`/${orgSlug}/tournaments/${tournamentId}/qrcode`} variant="outline">
-            📶 QR code
-          </LinkButton>
-        </div>
-      </div>
+    <div className="flex flex-1 flex-col">
+      <TournamentToolbar
+        orgSlug={orgSlug}
+        tournamentId={tournamentId}
+        tournamentName={tournament.name}
+        publicSlug={tournament.publicSlug}
+      />
 
-      <div className="flex gap-3">
-        <StatTile label="Joueurs" value={tournament._count.players} />
-        <StatTile label="Tableaux" value={tournament.categories.length} />
-        <StatTile
-          label="Terminés"
-          value={tournament.categories.filter((c) => c.status === "FINISHED").length}
-        />
-      </div>
+      <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-6 py-8">
+        <div className="flex gap-3">
+          <StatTile label="Joueurs" value={tournament._count.players} />
+          <StatTile label="Tableaux" value={tournament.categories.length} />
+          <StatTile
+            label="Terminés"
+            value={tournament.categories.filter((c) => c.status === "FINISHED").length}
+          />
+        </div>
 
-      <section className="flex flex-col gap-3">
-        {tournament.categories.length === 0 ? (
-          <Card className="px-6 py-10 text-center text-navy-400">
-            Aucune catégorie pour le moment.
-          </Card>
-        ) : (
-          tournament.categories.map((c) => {
-            const cta = categoryCta(
-              orgSlug,
-              tournamentId,
-              c.id,
-              c.status,
-              c.format,
-              c._count.registrations
-            );
-            return (
-              <Card key={c.id} className="p-4">
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold">{c.name}</h3>
-                      <span className="text-xs text-navy-400">{FORMAT_LABELS[c.format]}</span>
+        <section className="flex flex-col gap-3">
+          {tournament.categories.length === 0 ? (
+            <Card className="px-6 py-10 text-center text-navy-400">
+              Aucune catégorie pour le moment.
+            </Card>
+          ) : (
+            tournament.categories.map((c) => {
+              const cta = categoryCta(
+                orgSlug,
+                tournamentId,
+                c.id,
+                c.status,
+                c.format,
+                c._count.registrations
+              );
+              return (
+                <Card key={c.id} className="p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold">{c.name}</h3>
+                        <span className="text-xs text-navy-400">{FORMAT_LABELS[c.format]}</span>
+                      </div>
+                      <p className="text-xs text-navy-400">{c._count.registrations} joueur(s)</p>
                     </div>
-                    <p className="text-xs text-navy-400">{c._count.registrations} joueur(s)</p>
+                    <LinkButton href={cta.href} size="sm">{cta.label}</LinkButton>
                   </div>
-                  <LinkButton href={cta.href} size="sm">{cta.label}</LinkButton>
-                </div>
-                <div className="mt-4">
-                  <StageTracker
-                    stages={getCategoryStages(c.status, c.format, c._count.registrations)}
-                  />
-                </div>
-              </Card>
-            );
-          })
-        )}
+                  <div className="mt-4">
+                    <StageTracker
+                      stages={getCategoryStages(c.status, c.format, c._count.registrations)}
+                    />
+                  </div>
+                </Card>
+              );
+            })
+          )}
 
-        <details className="group rounded-2xl border border-dashed border-border bg-surface-muted p-4">
-          <summary className="cursor-pointer font-medium text-brand-600">
-            + Ajouter une catégorie
-          </summary>
-          <div className="mt-4">
-            <CategoryForm orgSlug={orgSlug} tournamentId={tournamentId} />
-          </div>
-        </details>
-      </section>
+          <details className="group rounded-2xl border border-dashed border-border bg-surface-muted p-4">
+            <summary className="cursor-pointer font-medium text-brand-600">
+              + Ajouter une catégorie
+            </summary>
+            <div className="mt-4">
+              <CategoryForm orgSlug={orgSlug} tournamentId={tournamentId} />
+            </div>
+          </details>
+        </section>
+      </div>
     </div>
   );
 }

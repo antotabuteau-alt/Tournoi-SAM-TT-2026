@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
 import { signOutAction } from "@/actions/auth.actions";
+import { getTournamentNavData, type TournamentNavData } from "@/actions/nav.actions";
 
 interface TournamentNavItem {
   id: string;
@@ -14,16 +15,34 @@ interface TournamentNavItem {
 export function AppShell({
   orgSlug,
   orgName,
+  userName,
   tournaments,
   children,
 }: {
   orgSlug: string;
   orgName: string;
+  userName: string;
   tournaments: TournamentNavItem[];
   children: React.ReactNode;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
+
+  const tournamentMatch = pathname?.match(/\/tournaments\/([^/]+)/);
+  const currentTournamentId = tournamentMatch?.[1];
+  const inTournamentContext = !!currentTournamentId && currentTournamentId !== "new";
+  const [navData, setNavData] = useState<TournamentNavData | null>(null);
+
+  useEffect(() => {
+    if (!currentTournamentId || currentTournamentId === "new") return;
+    let cancelled = false;
+    getTournamentNavData(orgSlug, currentTournamentId).then((data) => {
+      if (!cancelled) setNavData(data);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [orgSlug, currentTournamentId]);
 
   const sidebarContent = (
     <>
@@ -38,47 +57,94 @@ export function AppShell({
         <div className="px-2 pb-2 text-[11px] font-semibold tracking-wider text-navy-400 uppercase">
           Tournois
         </div>
-        <ul className="flex flex-col gap-0.5">
-          {tournaments.map((t) => {
-            const href = `/${orgSlug}/tournaments/${t.id}`;
-            const active = pathname?.startsWith(href);
-            return (
-              <li key={t.id}>
-                <Link
-                  href={href}
-                  onClick={() => setMobileOpen(false)}
-                  className={cn(
-                    "block truncate rounded-lg px-3 py-2 text-sm transition-colors",
-                    active
-                      ? "bg-accent-500 font-semibold text-navy-950"
-                      : "text-navy-300 hover:bg-white/5 hover:text-white"
-                  )}
-                  title={t.name}
-                >
-                  {t.name}
-                </Link>
-              </li>
-            );
-          })}
-          {tournaments.length === 0 && (
-            <li className="px-3 py-2 text-sm text-navy-400">Aucun tournoi</li>
-          )}
-        </ul>
+
+        {inTournamentContext && navData ? (
+          <div className="flex flex-col gap-1">
+            <div className="truncate rounded-lg bg-accent-500 px-3 py-2 text-sm font-semibold text-navy-950">
+              {navData.tournamentName}
+            </div>
+            <ul className="flex flex-col gap-0.5 pl-2">
+              {navData.categories.map((c) => {
+                const href = `/${orgSlug}/tournaments/${currentTournamentId}/categories/${c.id}`;
+                const active = pathname?.includes(`/categories/${c.id}`);
+                return (
+                  <li key={c.id}>
+                    <Link
+                      href={href}
+                      onClick={() => setMobileOpen(false)}
+                      className={cn(
+                        "block truncate rounded-lg px-3 py-1.5 text-sm transition-colors",
+                        active
+                          ? "font-semibold text-white"
+                          : "text-navy-300 hover:bg-white/5 hover:text-white"
+                      )}
+                      title={c.name}
+                    >
+                      🏓 {c.name}
+                    </Link>
+                  </li>
+                );
+              })}
+              {navData.categories.length === 0 && (
+                <li className="px-3 py-1.5 text-sm text-navy-400">Aucun tableau</li>
+              )}
+            </ul>
+            {navData.matchesInProgress > 0 && (
+              <div className="mt-2 border-t border-white/10 px-3 pt-2 text-xs text-navy-400">
+                {navData.matchesInProgress} match{navData.matchesInProgress !== 1 ? "s" : ""} en cours
+              </div>
+            )}
+          </div>
+        ) : (
+          <ul className="flex flex-col gap-0.5">
+            {tournaments.map((t) => {
+              const href = `/${orgSlug}/tournaments/${t.id}`;
+              const active = pathname?.startsWith(href);
+              return (
+                <li key={t.id}>
+                  <Link
+                    href={href}
+                    onClick={() => setMobileOpen(false)}
+                    className={cn(
+                      "block truncate rounded-lg px-3 py-2 text-sm transition-colors",
+                      active
+                        ? "bg-accent-500 font-semibold text-navy-950"
+                        : "text-navy-300 hover:bg-white/5 hover:text-white"
+                    )}
+                    title={t.name}
+                  >
+                    {t.name}
+                  </Link>
+                </li>
+              );
+            })}
+            {tournaments.length === 0 && (
+              <li className="px-3 py-2 text-sm text-navy-400">Aucun tournoi</li>
+            )}
+          </ul>
+        )}
       </nav>
 
-      <div className="flex flex-col gap-0.5 border-t border-white/10 px-3 py-3">
-        <Link
-          href="/dashboard"
-          className="rounded-lg px-3 py-2 text-sm text-navy-300 hover:bg-white/5 hover:text-white"
+      <div className="flex flex-col gap-0.5 border-t border-white/10 px-3 py-3 text-sm">
+        <Link href="/dashboard" className="rounded-lg px-3 py-2 text-navy-300 hover:bg-white/5 hover:text-white">
+          ❓ Aide
+        </Link>
+        <a
+          href="mailto:contact@samtt.fr"
+          className="rounded-lg px-3 py-2 text-navy-300 hover:bg-white/5 hover:text-white"
         >
+          💬 Une idée / un souci ?
+        </a>
+        <span className="truncate rounded-lg px-3 py-2 italic text-navy-400">👤 {userName}</span>
+        <Link href="/dashboard" className="rounded-lg px-3 py-2 text-navy-300 hover:bg-white/5 hover:text-white">
           Mes clubs
         </Link>
         <form action={signOutAction}>
           <button
             type="submit"
-            className="w-full rounded-lg px-3 py-2 text-left text-sm text-danger-600/90 hover:bg-white/5"
+            className="w-full rounded-lg px-3 py-2 text-left text-danger-600/90 hover:bg-white/5"
           >
-            Déconnexion
+            🔒 Déconnexion
           </button>
         </form>
       </div>

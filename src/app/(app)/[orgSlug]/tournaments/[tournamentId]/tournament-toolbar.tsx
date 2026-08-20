@@ -1,0 +1,82 @@
+import Link from "next/link";
+import { LinkButton } from "@/components/ui/link-button";
+
+export function TournamentToolbar({
+  orgSlug,
+  tournamentId,
+  tournamentName,
+  publicSlug,
+}: {
+  orgSlug: string;
+  tournamentId: string;
+  tournamentName: string;
+  publicSlug: string;
+}) {
+  const base = `/${orgSlug}/tournaments/${tournamentId}`;
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 border-b border-border bg-surface px-4 py-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <Link
+          href={`${base}/settings`}
+          className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-surface-muted"
+        >
+          ⚙ Paramètres salle
+        </Link>
+        <Link
+          href={`${base}/tables`}
+          className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-surface-muted"
+        >
+          📌 Tables
+        </Link>
+        <Link
+          href={`${base}/planning`}
+          className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-surface-muted"
+        >
+          📋 Planification
+        </Link>
+        <Link
+          href={`${base}/compositions`}
+          className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-surface-muted"
+        >
+          🖨 Compositions
+        </Link>
+        <a
+          href={`/api/tournaments/${tournamentId}/export`}
+          className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-surface-muted"
+        >
+          💾 Sauvegarder
+        </a>
+        <Link
+          href={`${base}/players`}
+          className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-surface-muted"
+        >
+          📝 Inscriptions
+        </Link>
+      </div>
+
+      <h1 className="mx-2 flex-1 truncate text-lg font-bold">{tournamentName}</h1>
+
+      <div className="flex items-center gap-2">
+        <LinkButton
+          href={`${baseUrl}/t/${publicSlug}`}
+          target="_blank"
+          rel="noreferrer"
+          variant="primary"
+          size="sm"
+          className="bg-success-500 hover:bg-success-600"
+        >
+          👁 Vue publique
+        </LinkButton>
+        <Link
+          href={`${base}/qrcode`}
+          className="flex h-8 w-8 items-center justify-center rounded-lg border border-border hover:bg-surface-muted"
+          title="QR code"
+        >
+          📶
+        </Link>
+      </div>
+    </div>
+  );
+}
