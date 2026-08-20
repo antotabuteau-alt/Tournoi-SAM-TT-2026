@@ -40,6 +40,13 @@ enum CategoryStatus {
   FINISHED
 }
 
+enum CategoryBracketType {
+  CLASSIC
+  INTEGRAL_BY_LEVEL
+  INTEGRAL_OFFICIAL_FFTT
+  MAIN_PLUS_CONSOLATION
+}
+
 enum MatchType {
   POOL
   BRACKET
@@ -175,6 +182,12 @@ model Category {
   poolQualifiersCount Int            @default(2)
   bestOfSets          Int            @default(3) // 3 ou 5 manches
   status              CategoryStatus @default(DRAFT)
+  scheduledAt         DateTime?
+  poolCount           Int?
+  tableRangeStart     Int?
+  tableRangeEnd       Int?
+  repechage           Boolean             @default(false)
+  bracketType         CategoryBracketType @default(CLASSIC)
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
 

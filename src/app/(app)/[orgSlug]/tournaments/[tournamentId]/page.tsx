@@ -1,42 +1,11 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { requireMembership } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { CategoryForm } from "./category-form";
-import { Card } from "@/components/ui/card";
-import { LinkButton } from "@/components/ui/link-button";
 import { StatTile } from "@/components/ui/stat-tile";
-import { StageTracker } from "@/components/ui/stage-tracker";
-import { getCategoryStages } from "@/lib/category-stages";
 import { TournamentToolbar } from "./tournament-toolbar";
-
-const FORMAT_LABELS: Record<string, string> = {
-  POOLS_THEN_BRACKET: "Poules + tableau final",
-  DIRECT_BRACKET: "Élimination directe",
-  POOLS_ONLY: "Poules uniquement",
-};
-
-function categoryCta(
-  orgSlug: string,
-  tournamentId: string,
-  categoryId: string,
-  status: string,
-  format: string,
-  registrationCount: number
-): { label: string; href: string } {
-  const base = `/${orgSlug}/tournaments/${tournamentId}/categories/${categoryId}`;
-  if (registrationCount === 0) return { label: "Ajouter des joueurs", href: base };
-  if (format === "DIRECT_BRACKET") {
-    if (status === "BRACKET_IN_PROGRESS") return { label: "Saisir les finales →", href: `${base}/bracket` };
-    if (status === "FINISHED") return { label: "Voir le classement →", href: `${base}/bracket` };
-    return { label: "Générer le tableau final →", href: `${base}/bracket` };
-  }
-  if (status === "DRAFT") return { label: "Générer les poules →", href: `${base}/pools` };
-  if (status === "POOLS_IN_PROGRESS") return { label: "Saisir les poules →", href: `${base}/pools` };
-  if (format === "POOLS_ONLY") return { label: "Voir les résultats →", href: `${base}/pools` };
-  if (status === "POOLS_DONE") return { label: "Générer le tableau final →", href: `${base}/bracket` };
-  if (status === "BRACKET_IN_PROGRESS") return { label: "Saisir les finales →", href: `${base}/bracket` };
-  return { label: "Voir le classement →", href: `${base}/bracket` };
-}
+import { CategoryCardsList } from "./category-cards-list";
 
 export default async function TournamentPage({
   params,
@@ -68,55 +37,42 @@ export default async function TournamentPage({
       />
 
       <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-6 py-8">
-        <div className="flex gap-3">
-          <StatTile label="Joueurs" value={tournament._count.players} />
-          <StatTile label="Tableaux" value={tournament.categories.length} />
-          <StatTile
-            label="Terminés"
-            value={tournament.categories.filter((c) => c.status === "FINISHED").length}
-          />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex gap-3">
+            <StatTile label="Joueurs" value={tournament._count.players} />
+            <StatTile label="Tableaux" value={tournament.categories.length} />
+            <StatTile
+              label="Terminés"
+              value={tournament.categories.filter((c) => c.status === "FINISHED").length}
+            />
+          </div>
+          <Link
+            href={`/${orgSlug}/tournaments/${tournamentId}/players`}
+            className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-surface-muted"
+          >
+            📝 Joueurs du tournoi
+          </Link>
         </div>
 
         <section className="flex flex-col gap-3">
-          {tournament.categories.length === 0 ? (
-            <Card className="px-6 py-10 text-center text-navy-400">
-              Aucune catégorie pour le moment.
-            </Card>
-          ) : (
-            tournament.categories.map((c) => {
-              const cta = categoryCta(
-                orgSlug,
-                tournamentId,
-                c.id,
-                c.status,
-                c.format,
-                c._count.registrations
-              );
-              return (
-                <Card key={c.id} className="p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold">{c.name}</h3>
-                        <span className="text-xs text-navy-400">{FORMAT_LABELS[c.format]}</span>
-                      </div>
-                      <p className="text-xs text-navy-400">{c._count.registrations} joueur(s)</p>
-                    </div>
-                    <LinkButton href={cta.href} size="sm">{cta.label}</LinkButton>
-                  </div>
-                  <div className="mt-4">
-                    <StageTracker
-                      stages={getCategoryStages(c.status, c.format, c._count.registrations, {
-                        orgSlug,
-                        tournamentId,
-                        categoryId: c.id,
-                      })}
-                    />
-                  </div>
-                </Card>
-              );
-            })
-          )}
+          <CategoryCardsList
+            orgSlug={orgSlug}
+            tournamentId={tournamentId}
+            categories={tournament.categories.map((c) => ({
+              id: c.id,
+              name: c.name,
+              format: c.format,
+              status: c.status,
+              scheduledAt: c.scheduledAt,
+              bracketType: c.bracketType,
+              poolQualifiersCount: c.poolQualifiersCount,
+              repechage: c.repechage,
+              poolCount: c.poolCount,
+              tableRangeStart: c.tableRangeStart,
+              tableRangeEnd: c.tableRangeEnd,
+              registrationCount: c._count.registrations,
+            }))}
+          />
 
           <details className="group rounded-2xl border border-dashed border-border bg-surface-muted p-4">
             <summary className="cursor-pointer font-medium text-brand-600">

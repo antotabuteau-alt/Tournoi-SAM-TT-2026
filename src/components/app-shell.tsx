@@ -159,8 +159,8 @@ export function AppShell({
   );
 
   return (
-    <div className="flex h-dvh w-full overflow-hidden bg-background">
-      <aside className="hidden w-64 shrink-0 flex-col bg-navy-950 md:flex">
+    <div className="flex h-dvh w-full overflow-hidden bg-background print:block print:h-auto print:overflow-visible">
+      <aside className="hidden w-64 shrink-0 flex-col bg-navy-950 md:flex print:hidden">
         {sidebarContent}
       </aside>
 
@@ -176,8 +176,8 @@ export function AppShell({
         </div>
       )}
 
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="flex shrink-0 items-center gap-3 border-b border-border bg-surface px-4 py-3 md:hidden">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden print:block print:overflow-visible">
+        <header className="flex shrink-0 items-center gap-3 border-b border-border bg-surface px-4 py-3 md:hidden print:hidden">
           <button
             onClick={() => setMobileOpen(true)}
             className="flex h-9 w-9 items-center justify-center rounded-lg border border-border"
@@ -187,7 +187,7 @@ export function AppShell({
           </button>
           <span className="truncate font-semibold">{orgName}</span>
         </header>
-        <main className="flex-1 overflow-y-auto">{children}</main>
+        <main className="flex-1 overflow-y-auto print:overflow-visible">{children}</main>
       </div>
     </div>
   );

@@ -24,36 +24,12 @@ export function TournamentToolbar({
         >
           ⚙ Paramètres salle
         </Link>
-        <Link
-          href={`${base}/tables`}
-          className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-surface-muted"
-        >
-          📌 Tables
-        </Link>
-        <Link
-          href={`${base}/planning`}
-          className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-surface-muted"
-        >
-          📋 Planification
-        </Link>
-        <Link
-          href={`${base}/compositions`}
-          className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-surface-muted"
-        >
-          🖨 Compositions
-        </Link>
         <a
           href={`/api/tournaments/${tournamentId}/export`}
           className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-surface-muted"
         >
           💾 Sauvegarder
         </a>
-        <Link
-          href={`${base}/players`}
-          className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-surface-muted"
-        >
-          📝 Inscriptions
-        </Link>
       </div>
 
       <h1 className="mx-2 flex-1 truncate text-lg font-bold">{tournamentName}</h1>
