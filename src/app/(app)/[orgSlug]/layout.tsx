@@ -1,5 +1,6 @@
-import Link from "next/link";
 import { requireMembership } from "@/lib/tenant";
+import { prisma } from "@/lib/prisma";
+import { AppShell } from "@/components/app-shell";
 
 export default async function OrgLayout({
   children,
@@ -11,19 +12,15 @@ export default async function OrgLayout({
   const { orgSlug } = await params;
   const { organization } = await requireMembership(orgSlug);
 
+  const tournaments = await prisma.tournament.findMany({
+    where: { organizationId: organization.id },
+    select: { id: true, name: true },
+    orderBy: { date: "desc" },
+  });
+
   return (
-    <div className="flex flex-1 flex-col">
-      <header className="border-b border-black/10">
-        <nav className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <Link href={`/${organization.slug}`} className="font-semibold">
-            {organization.name}
-          </Link>
-          <Link href="/dashboard" className="text-sm hover:underline">
-            Mes clubs
-          </Link>
-        </nav>
-      </header>
-      <main className="flex flex-1 flex-col">{children}</main>
-    </div>
+    <AppShell orgSlug={organization.slug} orgName={organization.name} tournaments={tournaments}>
+      {children}
+    </AppShell>
   );
 }

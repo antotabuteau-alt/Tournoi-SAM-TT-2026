@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { resetPoolsAction } from "@/actions/pools.actions";
+import { Button } from "@/components/ui/button";
 
 export function ResetPoolsButton({
   orgSlug,
@@ -38,14 +39,10 @@ export function ResetPoolsButton({
 
   return (
     <div className="flex flex-col items-start gap-2">
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <button
-        onClick={handleClick}
-        disabled={isPending}
-        className="rounded-md border border-red-300 px-4 py-2 text-sm text-red-600 disabled:opacity-50"
-      >
-        {isPending ? "Réinitialisation..." : "Réinitialiser les poules"}
-      </button>
+      {error && <p className="text-sm text-danger-600">{error}</p>}
+      <Button variant="danger" size="sm" onClick={handleClick} disabled={isPending}>
+        {isPending ? "Réinitialisation..." : "↺ Réinitialiser les poules"}
+      </Button>
     </div>
   );
 }

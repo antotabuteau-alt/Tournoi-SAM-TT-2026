@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { registerPlayersToCategoryAction } from "@/actions/players.actions";
+import { Button } from "@/components/ui/button";
 
 interface Player {
   id: string;
@@ -59,28 +60,25 @@ export function RegisterPlayersForm({
       <ul className="flex max-h-64 flex-col gap-1 overflow-y-auto text-sm">
         {players.map((p) => (
           <li key={p.id}>
-            <label className="flex items-center gap-2 rounded-md px-2 py-1 hover:bg-black/[.03]">
+            <label className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-surface-muted">
               <input
                 type="checkbox"
                 checked={selected.has(p.id)}
                 onChange={() => toggle(p.id)}
+                className="accent-brand-500"
               />
               {p.firstName} {p.lastName}
-              {p.club && <span className="text-foreground/50">— {p.club}</span>}
+              {p.club && <span className="text-navy-400">— {p.club}</span>}
             </label>
           </li>
         ))}
       </ul>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-danger-600">{error}</p>}
 
-      <button
-        onClick={handleSubmit}
-        disabled={isPending || selected.size === 0}
-        className="w-fit rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-50"
-      >
+      <Button onClick={handleSubmit} disabled={isPending || selected.size === 0} className="w-fit">
         {isPending ? "Inscription..." : `Inscrire (${selected.size})`}
-      </button>
+      </Button>
     </div>
   );
 }

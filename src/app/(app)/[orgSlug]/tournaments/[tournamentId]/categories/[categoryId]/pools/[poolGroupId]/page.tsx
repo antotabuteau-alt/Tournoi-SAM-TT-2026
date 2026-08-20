@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireMembership } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { MatchScoreForm } from "../../match-score-form";
+import { LinkButton } from "@/components/ui/link-button";
 
 export default async function PoolMatchesPage({
   params,
@@ -37,18 +37,19 @@ export default async function PoolMatchesPage({
   if (!poolGroup) notFound();
 
   return (
-    <div className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-6 py-16">
+    <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-5 px-6 py-8">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{poolGroup.name}</h1>
-        <Link
+        <LinkButton
           href={`/${orgSlug}/tournaments/${tournamentId}/categories/${categoryId}/pools`}
-          className="text-sm hover:underline"
+          variant="outline"
+          size="sm"
         >
-          Retour aux poules
-        </Link>
+          ← Retour aux poules
+        </LinkButton>
       </div>
 
-      <div className="flex flex-col gap-4">
+      <div className="grid gap-3 sm:grid-cols-2">
         {poolGroup.matches.map((m) => (
           <MatchScoreForm
             key={m.id}
@@ -64,6 +65,8 @@ export default async function PoolMatchesPage({
             winnerId={m.winnerId}
             player1Id={m.player1Id}
             player2Id={m.player2Id}
+            tableNumber={m.tableNumber}
+            refereeName={m.refereeName}
             existingSets={m.sets.map((s) => ({
               player1Points: s.player1Points,
               player2Points: s.player2Points,

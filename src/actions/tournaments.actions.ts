@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { nanoid } from "nanoid";
 import { requireMembership } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
@@ -36,6 +37,7 @@ export async function createTournamentAction(
     },
   });
 
+  revalidatePath(`/${orgSlug}`, "layout");
   redirect(`/${orgSlug}/tournaments/${tournament.id}`);
 }
 

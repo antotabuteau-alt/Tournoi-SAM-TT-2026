@@ -9,6 +9,8 @@ import {
   csvPlayerRowSchema,
   type CsvPlayerRow,
 } from "@/lib/validators/player.schema";
+import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 
 type Step = "upload" | "mapping" | "review";
 
@@ -95,17 +97,15 @@ export function CsvImportWizard({
   if (result) {
     return (
       <div className="flex flex-col gap-4">
-        <p className="text-green-700">
-          {result.imported} joueur(s) importé(s) avec succès.
+        <p className="font-medium text-success-600">
+          ✓ {result.imported} joueur(s) importé(s) avec succès.
         </p>
-        <button
-          onClick={() =>
-            router.push(`/${orgSlug}/tournaments/${tournamentId}/players`)
-          }
-          className="w-fit rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background"
+        <Button
+          onClick={() => router.push(`/${orgSlug}/tournaments/${tournamentId}/players`)}
+          className="w-fit"
         >
           Voir les joueurs
-        </button>
+        </Button>
       </div>
     );
   }
@@ -113,18 +113,23 @@ export function CsvImportWizard({
   if (step === "upload") {
     return (
       <div className="flex flex-col gap-4">
-        <p className="text-sm text-foreground/70">
+        <p className="text-sm text-navy-400">
           Fichier CSV avec en-têtes (première ligne = noms de colonnes).
         </p>
-        <input
-          type="file"
-          accept=".csv,text/csv"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) handleFile(file);
-          }}
-        />
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        <label className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-border bg-surface-muted px-6 py-10 text-center hover:border-brand-400">
+          <span className="text-2xl">📄</span>
+          <span className="text-sm font-medium text-brand-600">Choisir un fichier CSV</span>
+          <input
+            type="file"
+            accept=".csv,text/csv"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleFile(file);
+            }}
+          />
+        </label>
+        {error && <p className="text-sm text-danger-600">{error}</p>}
       </div>
     );
   }
@@ -132,39 +137,40 @@ export function CsvImportWizard({
   if (step === "mapping") {
     return (
       <div className="flex flex-col gap-4">
-        <p className="text-sm text-foreground/70">
+        <p className="text-sm text-navy-400">
           {rawRows.length} ligne(s) détectée(s). Associe chaque champ à une colonne du fichier.
         </p>
-        {PLAYER_CSV_FIELDS.map((field) => (
-          <label key={field.key} className="flex flex-col gap-1 text-sm">
-            {field.label}
-            {field.required && <span className="text-red-600"> *</span>}
-            <select
-              value={mapping[field.key] ?? NONE}
-              onChange={(e) =>
-                setMapping((m) => ({
-                  ...m,
-                  [field.key]: e.target.value === NONE ? undefined : e.target.value,
-                }))
-              }
-              className="rounded-md border border-black/15 px-3 py-2"
-            >
-              <option value={NONE}>-- Aucune --</option>
-              {headers.map((h) => (
-                <option key={h} value={h}>
-                  {h}
-                </option>
-              ))}
-            </select>
-          </label>
-        ))}
-        <button
+        <div className="grid gap-4 sm:grid-cols-2">
+          {PLAYER_CSV_FIELDS.map((field) => (
+            <label key={field.key} className="flex flex-col gap-1.5 text-sm font-medium text-navy-700">
+              {field.label}
+              {field.required && <span className="text-danger-600"> *</span>}
+              <Select
+                value={mapping[field.key] ?? NONE}
+                onChange={(e) =>
+                  setMapping((m) => ({
+                    ...m,
+                    [field.key]: e.target.value === NONE ? undefined : e.target.value,
+                  }))
+                }
+              >
+                <option value={NONE}>-- Aucune --</option>
+                {headers.map((h) => (
+                  <option key={h} value={h}>
+                    {h}
+                  </option>
+                ))}
+              </Select>
+            </label>
+          ))}
+        </div>
+        <Button
           disabled={!mapping.firstName || !mapping.lastName}
           onClick={() => setStep("review")}
-          className="w-fit rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-50"
+          className="w-fit"
         >
           Valider les correspondances
-        </button>
+        </Button>
       </div>
     );
   }
@@ -172,42 +178,33 @@ export function CsvImportWizard({
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm">
-        <span className="text-green-700">{validRows.length} ligne(s) valide(s)</span>
+        <span className="font-medium text-success-600">{validRows.length} ligne(s) valide(s)</span>
         {invalidCount > 0 && (
-          <span className="ml-2 text-red-600">{invalidCount} ligne(s) ignorée(s) (prénom/nom manquant)</span>
+          <span className="ml-2 text-danger-600">{invalidCount} ligne(s) ignorée(s) (prénom/nom manquant)</span>
         )}
       </p>
 
-      <ul className="max-h-64 overflow-y-auto rounded-md border border-black/10 text-sm">
+      <ul className="max-h-64 overflow-y-auto rounded-lg border border-border text-sm">
         {validRows.slice(0, 20).map((row, i) => (
-          <li key={i} className="border-b border-black/5 px-3 py-1.5 last:border-0">
+          <li key={i} className="border-b border-border px-3 py-1.5 last:border-0">
             {row.firstName} {row.lastName}
             {row.club ? ` — ${row.club}` : ""}
           </li>
         ))}
         {validRows.length > 20 && (
-          <li className="px-3 py-1.5 text-foreground/50">
-            + {validRows.length - 20} autre(s)
-          </li>
+          <li className="px-3 py-1.5 text-navy-400">+ {validRows.length - 20} autre(s)</li>
         )}
       </ul>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-danger-600">{error}</p>}
 
       <div className="flex gap-3">
-        <button
-          onClick={() => setStep("mapping")}
-          className="rounded-md border border-black/10 px-4 py-2 text-sm"
-        >
+        <Button variant="outline" onClick={() => setStep("mapping")}>
           Retour
-        </button>
-        <button
-          onClick={handleConfirm}
-          disabled={isImporting || validRows.length === 0}
-          className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-50"
-        >
+        </Button>
+        <Button onClick={handleConfirm} disabled={isImporting || validRows.length === 0}>
           {isImporting ? "Import..." : `Confirmer l'import (${validRows.length})`}
-        </button>
+        </Button>
       </div>
     </div>
   );

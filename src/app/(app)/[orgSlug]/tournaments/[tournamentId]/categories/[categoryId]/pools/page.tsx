@@ -6,6 +6,9 @@ import { computePoolRanking } from "@/lib/pool-view";
 import { PoolGenerationForm } from "./pool-generation-form";
 import { PoolDndBoard } from "./pool-dnd-board";
 import { ResetPoolsButton } from "./reset-pools-button";
+import { LinkButton } from "@/components/ui/link-button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 export default async function PoolsPage({
   params,
@@ -37,20 +40,19 @@ export default async function PoolsPage({
   const hasMatches = category.poolGroups.some((g) => g.matches.length > 0);
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-8 px-6 py-16">
+    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 px-6 py-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Poules — {category.name}</h1>
-          <p className="text-sm text-foreground/60">
-            {category.registrations.length} inscrit(s)
-          </p>
+          <p className="text-sm text-navy-400">{category.registrations.length} inscrit(s)</p>
         </div>
-        <Link
+        <LinkButton
           href={`/${orgSlug}/tournaments/${tournamentId}/categories/${categoryId}`}
-          className="text-sm hover:underline"
+          variant="outline"
+          size="sm"
         >
-          Retour à la catégorie
-        </Link>
+          ← Retour à la catégorie
+        </LinkButton>
       </div>
 
       {!hasPools && (
@@ -88,18 +90,14 @@ export default async function PoolsPage({
       )}
 
       {hasMatches && (
-        <div className="flex flex-col gap-6">
-          <div className="grid gap-6 sm:grid-cols-2">
+        <div className="flex flex-col gap-5">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {category.poolGroups.map((group) => {
               const registrationIds = group.members.map((m) => m.registrationId);
               const initialSeedOrder = [...group.members]
                 .sort((a, b) => (a.seedInPool ?? 999) - (b.seedInPool ?? 999))
                 .map((m) => m.registrationId);
-              const ranking = computePoolRanking(
-                registrationIds,
-                group.matches,
-                initialSeedOrder
-              );
+              const ranking = computePoolRanking(registrationIds, group.matches, initialSeedOrder);
               const namesById = new Map(
                 group.members.map((m) => [
                   m.registrationId,
@@ -109,41 +107,38 @@ export default async function PoolsPage({
               const allDone = group.matches.every((m) => m.status === "DONE");
 
               return (
-                <div key={group.id} className="rounded-md border border-black/10 p-4">
+                <Card key={group.id} className="p-4">
                   <div className="mb-3 flex items-center justify-between">
                     <h2 className="font-semibold">{group.name}</h2>
-                    <Link
-                      href={`/${orgSlug}/tournaments/${tournamentId}/categories/${categoryId}/pools/${group.id}`}
-                      className="text-sm underline"
-                    >
-                      Saisir les scores
-                    </Link>
+                    {allDone ? (
+                      <Badge variant="success">Terminée</Badge>
+                    ) : (
+                      <Link
+                        href={`/${orgSlug}/tournaments/${tournamentId}/categories/${categoryId}/pools/${group.id}`}
+                        className="text-xs font-medium text-brand-600 hover:underline"
+                      >
+                        Saisir les scores →
+                      </Link>
+                    )}
                   </div>
                   <table className="w-full text-sm">
                     <tbody>
                       {ranking.map((row) => (
-                        <tr key={row.player} className="border-t border-black/5">
-                          <td className="py-1 pr-2 text-foreground/50">{row.rank}</td>
-                          <td className="py-1">{namesById.get(row.player)}</td>
-                          <td className="py-1 text-right text-foreground/60">
+                        <tr key={row.player} className="border-t border-border">
+                          <td className="py-1.5 pr-2 text-navy-400">{row.rank}</td>
+                          <td className="py-1.5 font-medium">{namesById.get(row.player)}</td>
+                          <td className="py-1.5 text-right text-navy-400">
                             {row.wins}V-{row.losses}D
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
-                  {allDone && (
-                    <p className="mt-2 text-xs text-green-700">Poule terminée</p>
-                  )}
-                </div>
+                </Card>
               );
             })}
           </div>
-          <ResetPoolsButton
-            orgSlug={orgSlug}
-            tournamentId={tournamentId}
-            categoryId={categoryId}
-          />
+          <ResetPoolsButton orgSlug={orgSlug} tournamentId={tournamentId} categoryId={categoryId} />
         </div>
       )}
     </div>

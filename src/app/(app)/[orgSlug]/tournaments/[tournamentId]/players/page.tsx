@@ -1,8 +1,9 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireMembership } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { AddPlayerForm } from "./add-player-form";
+import { Card } from "@/components/ui/card";
+import { LinkButton } from "@/components/ui/link-button";
 
 export default async function PlayersPage({
   params,
@@ -23,45 +24,45 @@ export default async function PlayersPage({
   });
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 py-16">
+    <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-5 px-6 py-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Joueurs — {tournament.name}</h1>
-        <Link
-          href={`/${orgSlug}/tournaments/${tournamentId}/players/import`}
-          className="rounded-md border border-black/10 px-4 py-2 text-sm"
-        >
-          Importer un CSV
-        </Link>
+        <div>
+          <h1 className="text-2xl font-bold">Joueurs</h1>
+          <p className="text-sm text-navy-400">{tournament.name} · {players.length} joueur(s)</p>
+        </div>
+        <LinkButton href={`/${orgSlug}/tournaments/${tournamentId}/players/import`} variant="outline">
+          📄 Importer un CSV
+        </LinkButton>
       </div>
 
-      <section className="flex flex-col gap-3">
-        {players.length === 0 ? (
-          <p className="text-foreground/70">Aucun joueur pour le moment.</p>
-        ) : (
-          <ul className="flex flex-col gap-1 text-sm">
-            {players.map((p) => (
-              <li
-                key={p.id}
-                className="flex justify-between rounded-md border border-black/10 px-4 py-2"
-              >
-                <span>
-                  {p.firstName} {p.lastName}
-                </span>
-                <span className="text-foreground/60">{p.club}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
+        <Card className="p-4">
+          {players.length === 0 ? (
+            <p className="py-6 text-center text-sm text-navy-400">Aucun joueur pour le moment.</p>
+          ) : (
+            <ul className="grid gap-x-4 sm:grid-cols-2">
+              {players.map((p) => (
+                <li
+                  key={p.id}
+                  className="flex items-center justify-between border-b border-border py-2 text-sm last:border-0"
+                >
+                  <span>
+                    {p.firstName} {p.lastName}
+                  </span>
+                  <span className="truncate text-xs text-navy-400">{p.club}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
 
-      <details className="rounded-md border border-black/10 p-4">
-        <summary className="cursor-pointer font-medium">
-          Ajouter un joueur manuellement
-        </summary>
-        <div className="mt-4">
+        <Card className="p-4">
+          <h2 className="mb-3 text-sm font-semibold tracking-wide text-navy-400 uppercase">
+            Ajouter un joueur
+          </h2>
           <AddPlayerForm orgSlug={orgSlug} tournamentId={tournamentId} />
-        </div>
-      </details>
+        </Card>
+      </div>
     </div>
   );
 }

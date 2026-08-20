@@ -2,7 +2,7 @@
 
 import { headers } from "next/headers";
 import { AuthError } from "next-auth";
-import { signIn } from "@/auth";
+import { signIn, signOut } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/password";
 import { registerSchema, loginSchema } from "@/lib/validators/auth.schema";
@@ -112,4 +112,8 @@ export async function loginAction(
   }
 
   return { success: true };
+}
+
+export async function signOutAction() {
+  await signOut({ redirectTo: "/" });
 }

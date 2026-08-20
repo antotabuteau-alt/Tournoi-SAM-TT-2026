@@ -13,16 +13,18 @@ export default function PublicPoolsPage({
   const { data, isLoading } = useTournamentLiveData(publicSlug);
 
   if (isLoading || !data) {
-    return <p className="px-6 py-16 text-center text-foreground/60">Chargement...</p>;
+    return <p className="px-6 py-16 text-center text-navy-400">Chargement...</p>;
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-10 px-6 py-16">
+    <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 px-6 py-8">
       <h1 className="text-2xl font-bold">{data.name} — Poules en direct</h1>
       {data.categories.map((category) => (
         <section key={category.id} className="flex flex-col gap-3">
-          <h2 className="text-lg font-semibold">{category.name}</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <h2 className="text-sm font-semibold tracking-wide text-navy-400 uppercase">
+            {category.name}
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {category.pools.map((pool) => (
               <PoolDisplay key={pool.id} pool={pool} />
             ))}

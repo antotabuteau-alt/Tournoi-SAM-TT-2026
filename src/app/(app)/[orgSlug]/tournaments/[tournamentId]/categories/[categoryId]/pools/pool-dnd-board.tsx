@@ -9,6 +9,7 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { movePoolMemberAction, generatePoolMatchesAction } from "@/actions/pools.actions";
+import { Button } from "@/components/ui/button";
 
 interface Member {
   registrationId: string;
@@ -38,7 +39,7 @@ function PlayerCard({ registrationId, name }: Member) {
           ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
           : undefined,
       }}
-      className={`cursor-grab rounded-md border border-black/10 bg-background px-3 py-2 text-sm ${
+      className={`cursor-grab rounded-lg border border-border bg-surface px-3 py-2 text-sm shadow-sm ${
         isDragging ? "opacity-50" : ""
       }`}
     >
@@ -61,11 +62,11 @@ function Column({
   return (
     <div
       ref={setNodeRef}
-      className={`flex min-h-40 flex-col gap-2 rounded-md border p-3 ${
-        isOver ? "border-foreground bg-black/[.02]" : "border-black/10"
+      className={`flex min-h-40 flex-col gap-2 rounded-xl border-2 border-dashed p-3 transition-colors ${
+        isOver ? "border-brand-400 bg-brand-50" : "border-border bg-surface-muted"
       }`}
     >
-      <h3 className="text-sm font-semibold text-foreground/70">{title}</h3>
+      <h3 className="text-xs font-semibold tracking-wide text-navy-400 uppercase">{title}</h3>
       {members.map((m) => (
         <PlayerCard key={m.registrationId} {...m} />
       ))}
@@ -156,26 +157,22 @@ export function PoolDndBoard({
   return (
     <DndContext onDragEnd={handleDragEnd}>
       <div className="flex flex-col gap-4">
-        <p className="text-sm text-foreground/60">
+        <p className="text-sm text-navy-400">
           Glisse-dépose les joueurs entre les poules, puis valide pour générer les matchs.
         </p>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-danger-600">{error}</p>}
 
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
           <Column id={UNASSIGNED} title="Non assignés" members={rest} />
           {groups.map((g) => (
             <Column key={g.id} id={g.id} title={g.name} members={g.members} />
           ))}
         </div>
 
-        <button
-          onClick={handleGenerateMatches}
-          disabled={isPending}
-          className="w-fit rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-50"
-        >
-          {isPending ? "..." : "Valider les poules et générer les matchs"}
-        </button>
+        <Button variant="accent" onClick={handleGenerateMatches} disabled={isPending} className="w-fit">
+          {isPending ? "..." : "✓ Valider les poules et générer les matchs"}
+        </Button>
       </div>
     </DndContext>
   );

@@ -3,6 +3,9 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { generatePoolsAction } from "@/actions/pools.actions";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input, Label } from "@/components/ui/input";
 
 export function PoolGenerationForm({
   orgSlug,
@@ -26,13 +29,7 @@ export function PoolGenerationForm({
   function generate(mode: "auto" | "manual") {
     setError(null);
     startTransition(async () => {
-      const res = await generatePoolsAction(
-        orgSlug,
-        tournamentId,
-        categoryId,
-        mode,
-        poolCount
-      );
+      const res = await generatePoolsAction(orgSlug, tournamentId, categoryId, mode, poolCount);
       if ("error" in res) {
         setError(res.error);
         return;
@@ -43,43 +40,34 @@ export function PoolGenerationForm({
 
   if (playerCount < 2) {
     return (
-      <p className="text-foreground/70">
+      <Card className="px-6 py-8 text-center text-navy-400">
         Inscris au moins 2 joueurs avant de générer les poules.
-      </p>
+      </Card>
     );
   }
 
   return (
-    <div className="flex flex-col gap-4 rounded-md border border-black/10 p-4">
-      <label className="flex items-center gap-2 text-sm">
+    <Card className="flex flex-col gap-4 p-6">
+      <Label className="w-32">
         Nombre de poules
-        <input
+        <Input
           type="number"
           min={1}
           value={poolCount}
           onChange={(e) => setPoolCount(Number(e.target.value))}
-          className="w-20 rounded-md border border-black/15 px-2 py-1"
         />
-      </label>
+      </Label>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-danger-600">{error}</p>}
 
       <div className="flex flex-wrap gap-3">
-        <button
-          onClick={() => generate("auto")}
-          disabled={isPending}
-          className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-50"
-        >
-          Générer automatiquement (serpent)
-        </button>
-        <button
-          onClick={() => generate("manual")}
-          disabled={isPending}
-          className="rounded-md border border-black/10 px-4 py-2 text-sm disabled:opacity-50"
-        >
+        <Button variant="accent" onClick={() => generate("auto")} disabled={isPending}>
+          🐍 Générer automatiquement (serpent)
+        </Button>
+        <Button variant="outline" onClick={() => generate("manual")} disabled={isPending}>
           Créer des poules vides (manuel)
-        </button>
+        </Button>
       </div>
-    </div>
+    </Card>
   );
 }

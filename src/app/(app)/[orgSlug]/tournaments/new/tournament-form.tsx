@@ -3,6 +3,8 @@
 import { useActionState } from "react";
 import { createTournamentAction } from "@/actions/tournaments.actions";
 import type { ActionResult } from "@/lib/action-result";
+import { Input, Label } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export function TournamentForm({ orgSlug }: { orgSlug: string }) {
   const action = createTournamentAction.bind(null, orgSlug);
@@ -13,46 +15,28 @@ export function TournamentForm({ orgSlug }: { orgSlug: string }) {
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
-      <label className="flex flex-col gap-1 text-sm">
+      <Label>
         Nom du tournoi
-        <input
-          type="text"
-          name="name"
-          required
-          className="rounded-md border border-black/15 px-3 py-2"
-        />
-      </label>
+        <Input type="text" name="name" required />
+      </Label>
 
-      <label className="flex flex-col gap-1 text-sm">
+      <Label>
         Date
-        <input
-          type="date"
-          name="date"
-          required
-          className="rounded-md border border-black/15 px-3 py-2"
-        />
-      </label>
+        <Input type="date" name="date" required />
+      </Label>
 
-      <label className="flex flex-col gap-1 text-sm">
+      <Label>
         Lieu (optionnel)
-        <input
-          type="text"
-          name="location"
-          className="rounded-md border border-black/15 px-3 py-2"
-        />
-      </label>
+        <Input type="text" name="location" />
+      </Label>
 
       {state && "error" in state && (
-        <p className="text-sm text-red-600">{state.error}</p>
+        <p className="text-sm text-danger-600">{state.error}</p>
       )}
 
-      <button
-        type="submit"
-        disabled={isPending}
-        className="rounded-md bg-foreground px-4 py-2 text-background font-medium disabled:opacity-50"
-      >
+      <Button type="submit" variant="accent" disabled={isPending} className="mt-2">
         {isPending ? "Création..." : "Créer le tournoi"}
-      </button>
+      </Button>
     </form>
   );
 }

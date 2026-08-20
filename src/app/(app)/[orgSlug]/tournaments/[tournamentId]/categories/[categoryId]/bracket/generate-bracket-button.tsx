@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { generateBracketAction } from "@/actions/bracket.actions";
+import { Button } from "@/components/ui/button";
 
 export function GenerateBracketButton({
   orgSlug,
@@ -30,15 +31,11 @@ export function GenerateBracketButton({
   }
 
   return (
-    <div className="flex flex-col items-start gap-2">
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <button
-        onClick={handleClick}
-        disabled={isPending}
-        className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-50"
-      >
-        {isPending ? "Génération..." : "Générer le tableau final"}
-      </button>
+    <div className="flex flex-col items-center gap-2">
+      {error && <p className="text-sm text-danger-600">{error}</p>}
+      <Button variant="accent" size="lg" onClick={handleClick} disabled={isPending}>
+        🏆 {isPending ? "Génération..." : "Générer le tableau final"}
+      </Button>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { requireMembership } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { QrCodeCard } from "./qr-code-card";
+import { LinkButton } from "@/components/ui/link-button";
 
 export default async function QrCodePage({
   params,
@@ -20,15 +21,26 @@ export default async function QrCodePage({
   const publicUrl = `${baseUrl}/t/${tournament.publicSlug}`;
 
   return (
-    <div className="mx-auto flex w-full max-w-sm flex-1 flex-col items-center gap-6 px-6 py-16 text-center">
-      <h1 className="text-2xl font-bold">Suivi public — {tournament.name}</h1>
-      <p className="text-sm text-foreground/60">
+    <div className="mx-auto flex w-full max-w-sm flex-1 flex-col items-center justify-center gap-6 px-6 py-8 text-center">
+      <div>
+        <h1 className="text-2xl font-bold">Suivi public</h1>
+        <p className="text-sm text-navy-400">{tournament.name}</p>
+      </div>
+      <p className="text-sm text-navy-400">
         Les participants scannent ce QR code pour suivre les poules et le tableau en direct.
       </p>
       <QrCodeCard url={publicUrl} />
-      <a href={publicUrl} target="_blank" rel="noreferrer" className="text-sm underline">
+      <a
+        href={publicUrl}
+        target="_blank"
+        rel="noreferrer"
+        className="text-sm text-brand-600 hover:underline"
+      >
         {publicUrl}
       </a>
+      <LinkButton href={`/t/${tournament.publicSlug}/tv`} target="_blank" variant="dark">
+        📺 Ouvrir le mode TV
+      </LinkButton>
     </div>
   );
 }
