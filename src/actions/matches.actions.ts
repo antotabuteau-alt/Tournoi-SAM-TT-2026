@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireMembership } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { computeMatchOutcome, type SetInput } from "@/lib/match-scoring";
+import { propagateBracketWinner } from "@/lib/bracket-service";
 import type { ActionResult } from "@/lib/action-result";
 
 async function persistMatchResult(
@@ -125,13 +126,7 @@ export async function submitBracketScoreAction(
   if ("error" in result) return result;
 
   if (match.nextMatchId && match.nextMatchSlot) {
-    await prisma.match.update({
-      where: { id: match.nextMatchId },
-      data:
-        match.nextMatchSlot === 1
-          ? { player1Id: result.winnerId }
-          : { player2Id: result.winnerId },
-    });
+    await propagateBracketWinner(match.nextMatchId, match.nextMatchSlot, result.winnerId);
   } else {
     // Pas de nextMatchId : c'était la finale.
     await prisma.category.update({
@@ -230,10 +225,7 @@ export async function submitForfeitAction(
   ]);
 
   if (kind === "bracket" && match.nextMatchId && match.nextMatchSlot) {
-    await prisma.match.update({
-      where: { id: match.nextMatchId },
-      data: match.nextMatchSlot === 1 ? { player1Id: winnerId } : { player2Id: winnerId },
-    });
+    await propagateBracketWinner(match.nextMatchId, match.nextMatchSlot, winnerId);
   }
 
   revalidatePath(

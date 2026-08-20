@@ -5,6 +5,7 @@ import { LinkButton } from "@/components/ui/link-button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LiveClock } from "@/components/live-clock";
+import { DemoTournamentButton } from "./demo-tournament-button";
 
 const STATUS_LABELS: Record<string, string> = {
   DRAFT: "Brouillon",
@@ -44,9 +45,12 @@ export default async function OrgHomePage({
             {activeCount} tournoi{activeCount !== 1 ? "s" : ""} actif{activeCount !== 1 ? "s" : ""}
           </p>
         </div>
-        <LinkButton href={`/${orgSlug}/tournaments/new`} variant="accent">
-          + Nouveau tournoi
-        </LinkButton>
+        <div className="flex items-center gap-2">
+          <DemoTournamentButton orgSlug={orgSlug} />
+          <LinkButton href={`/${orgSlug}/tournaments/new`} variant="accent">
+            + Nouveau tournoi
+          </LinkButton>
+        </div>
       </div>
 
       {featured && (
@@ -90,7 +94,8 @@ export default async function OrgHomePage({
 
       {tournaments.length === 0 && (
         <Card className="px-6 py-10 text-center text-navy-400">
-          Aucun tournoi pour le moment — crée le premier avec le bouton ci-dessus.
+          Aucun tournoi pour le moment — crée le premier, ou génère un tournoi de
+          démonstration déjà rempli pour explorer l&apos;appli.
         </Card>
       )}
 
