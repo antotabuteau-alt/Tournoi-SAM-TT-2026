@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Card } from "@/components/ui/card";
+import { StatTile } from "@/components/ui/stat-tile";
 import { LinkButton } from "@/components/ui/link-button";
 import { StageTracker } from "@/components/ui/stage-tracker";
 import { getCategoryStages } from "@/lib/category-stages";
@@ -46,13 +48,22 @@ export interface CategoryCardData {
   registrationCount: number;
 }
 
+const TAB_META: Record<DayFilter, { label: string; barColor: string; dotColor: string }> = {
+  ALL: { label: "Tous les tableaux", barColor: "bg-navy-950", dotColor: "bg-navy-950" },
+  SATURDAY: { label: "Samedi", barColor: "bg-accent-500", dotColor: "bg-accent-500" },
+  SUNDAY: { label: "Dimanche", barColor: "bg-brand-500", dotColor: "bg-brand-500" },
+  OTHER: { label: "Sans date", barColor: "bg-navy-300", dotColor: "bg-navy-300" },
+};
+
 export function CategoryCardsList({
   orgSlug,
   tournamentId,
+  playerCount,
   categories,
 }: {
   orgSlug: string;
   tournamentId: string;
+  playerCount: number;
   categories: CategoryCardData[];
 }) {
   const [items, setItems] = useState(categories);
@@ -68,108 +79,153 @@ export function CategoryCardsList({
     setItems(categories);
   }
 
-  if (items.length === 0) {
-    return (
-      <Card className="px-6 py-10 text-center text-navy-400">
-        Aucune catégorie pour le moment.
-      </Card>
-    );
-  }
-
   const counts = {
     ALL: items.length,
     SATURDAY: items.filter((c) => categoryDay(c.scheduledAt) === "SATURDAY").length,
     SUNDAY: items.filter((c) => categoryDay(c.scheduledAt) === "SUNDAY").length,
     OTHER: items.filter((c) => categoryDay(c.scheduledAt) === "OTHER").length,
   };
-  const tabs: { key: DayFilter; label: string; dot?: string }[] = [
-    { key: "ALL", label: "Tous" },
-    { key: "SATURDAY", label: "Samedi", dot: "bg-accent-500" },
-    { key: "SUNDAY", label: "Dimanche", dot: "bg-brand-500" },
-    ...(counts.OTHER > 0 ? [{ key: "OTHER" as const, label: "Sans date", dot: "bg-navy-300" }] : []),
+  const tabs: DayFilter[] = [
+    "ALL",
+    "SATURDAY",
+    "SUNDAY",
+    ...(counts.OTHER > 0 ? (["OTHER"] as const) : []),
   ];
   const visible = tab === "ALL" ? items : items.filter((c) => categoryDay(c.scheduledAt) === tab);
+  const finishedVisible = visible.filter((c) => c.status === "FINISHED").length;
+
+  if (items.length === 0) {
+    return (
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex gap-3">
+            <StatTile label="Joueurs" value={playerCount} />
+            <StatTile label="Tableaux" value={0} />
+            <StatTile label="Terminés" value={0} />
+          </div>
+          <Link
+            href={`/${orgSlug}/tournaments/${tournamentId}/players`}
+            className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-surface-muted"
+          >
+            📝 Joueurs du tournoi
+          </Link>
+        </div>
+        <Card className="px-6 py-10 text-center text-navy-400">
+          Aucune catégorie pour le moment.
+        </Card>
+      </div>
+    );
+  }
 
   return (
-    <>
-      <div className="inline-flex w-fit flex-wrap items-center gap-0.5 rounded-xl bg-surface-muted p-1 shadow-inner shadow-navy-950/[.03]">
-        {tabs.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={cn(
-              "flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-all duration-150",
-              tab === t.key
-                ? "bg-surface text-foreground shadow-sm shadow-navy-950/10"
-                : "text-navy-400 hover:text-foreground"
-            )}
-          >
-            {t.dot && <span className={cn("h-1.5 w-1.5 rounded-full", t.dot)} />}
-            {t.label}
-            <span
-              className={cn(
-                "rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums",
-                tab === t.key ? "bg-navy-950 text-white" : "bg-navy-950/[.08] text-navy-500"
-              )}
-            >
-              {counts[t.key]}
-            </span>
-          </button>
-        ))}
+    <div className="flex flex-col gap-6">
+      <Card className="overflow-hidden p-0">
+        <div className="flex divide-x divide-border">
+          {tabs.map((key) => {
+            const meta = TAB_META[key];
+            const active = tab === key;
+            return (
+              <button
+                key={key}
+                onClick={() => setTab(key)}
+                className={cn(
+                  "relative flex flex-1 flex-col items-center gap-1 px-4 py-5 transition-colors",
+                  active ? "bg-surface-muted" : "hover:bg-surface-muted/60"
+                )}
+              >
+                <span
+                  className={cn(
+                    "flex items-center gap-2 text-base font-bold",
+                    active ? "text-foreground" : "text-navy-400"
+                  )}
+                >
+                  {key !== "ALL" && <span className={cn("h-2 w-2 rounded-full", meta.dotColor)} />}
+                  {meta.label}
+                </span>
+                <span className="text-xs text-navy-400">
+                  {counts[key]} tableau{counts[key] !== 1 ? "x" : ""}
+                </span>
+                <span
+                  className={cn(
+                    "absolute inset-x-0 bottom-0 h-[3px] transition-opacity",
+                    meta.barColor,
+                    active ? "opacity-100" : "opacity-0"
+                  )}
+                />
+              </button>
+            );
+          })}
+        </div>
+      </Card>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex gap-3">
+          <StatTile label="Joueurs" value={playerCount} />
+          <StatTile label="Tableaux" value={visible.length} />
+          <StatTile label="Terminés" value={finishedVisible} />
+        </div>
+        <Link
+          href={`/${orgSlug}/tournaments/${tournamentId}/players`}
+          className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-surface-muted"
+        >
+          📝 Joueurs du tournoi
+        </Link>
       </div>
 
-      {visible.length === 0 && (
-        <Card className="px-6 py-10 text-center text-navy-400">
-          Aucun tableau dans cet onglet.
-        </Card>
-      )}
+      <div className="flex flex-col gap-3">
+        {visible.length === 0 && (
+          <Card className="px-6 py-10 text-center text-navy-400">
+            Aucun tableau dans cet onglet.
+          </Card>
+        )}
 
-      {visible.map((c) => {
-        const cta = categoryCta(orgSlug, tournamentId, c.id, c.status, c.format, c.registrationCount);
-        return (
-          <Card key={c.id} className="p-4">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold">{c.name}</h3>
-                  <span className="text-xs text-navy-400">{FORMAT_LABELS[c.format]}</span>
+        {visible.map((c) => {
+          const cta = categoryCta(orgSlug, tournamentId, c.id, c.status, c.format, c.registrationCount);
+          return (
+            <Card key={c.id} className="p-4">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold">{c.name}</h3>
+                    <span className="text-xs text-navy-400">{FORMAT_LABELS[c.format]}</span>
+                  </div>
+                  <p className="text-xs text-navy-400">
+                    {c.registrationCount} joueur(s)
+                    {c.scheduledAt && <> · prévu le {formatWallClockDateTime(c.scheduledAt)}</>}
+                  </p>
                 </div>
-                <p className="text-xs text-navy-400">
-                  {c.registrationCount} joueur(s)
-                  {c.scheduledAt && <> · prévu le {formatWallClockDateTime(c.scheduledAt)}</>}
-                </p>
+                <div className="flex items-center gap-1">
+                  <LinkButton href={cta.href} size="sm">{cta.label}</LinkButton>
+                  <CategoryActionsMenu
+                    orgSlug={orgSlug}
+                    tournamentId={tournamentId}
+                    categoryId={c.id}
+                    categoryName={c.name}
+                    scheduledAt={c.scheduledAt}
+                    bracketType={c.bracketType}
+                    poolQualifiersCount={c.poolQualifiersCount}
+                    repechage={c.repechage}
+                    poolCount={c.poolCount}
+                    tableRangeStart={c.tableRangeStart}
+                    tableRangeEnd={c.tableRangeEnd}
+                    registrationCount={c.registrationCount}
+                    onDeleted={() => setItems((prev) => prev.filter((item) => item.id !== c.id))}
+                  />
+                </div>
               </div>
-              <div className="flex items-center gap-1">
-                <LinkButton href={cta.href} size="sm">{cta.label}</LinkButton>
-                <CategoryActionsMenu
-                  orgSlug={orgSlug}
-                  tournamentId={tournamentId}
-                  categoryId={c.id}
-                  categoryName={c.name}
-                  scheduledAt={c.scheduledAt}
-                  bracketType={c.bracketType}
-                  poolQualifiersCount={c.poolQualifiersCount}
-                  repechage={c.repechage}
-                  poolCount={c.poolCount}
-                  tableRangeStart={c.tableRangeStart}
-                  tableRangeEnd={c.tableRangeEnd}
-                  registrationCount={c.registrationCount}
-                  onDeleted={() => setItems((prev) => prev.filter((item) => item.id !== c.id))}
+              <div className="mt-4">
+                <StageTracker
+                  stages={getCategoryStages(c.status, c.format, c.registrationCount, {
+                    orgSlug,
+                    tournamentId,
+                    categoryId: c.id,
+                  })}
                 />
               </div>
-            </div>
-            <div className="mt-4">
-              <StageTracker
-                stages={getCategoryStages(c.status, c.format, c.registrationCount, {
-                  orgSlug,
-                  tournamentId,
-                  categoryId: c.id,
-                })}
-              />
-            </div>
-          </Card>
-        );
-      })}
-    </>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
   );
 }
