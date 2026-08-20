@@ -18,7 +18,7 @@ export default async function PlayersPage({
   if (!tournament) notFound();
 
   const players = await prisma.player.findMany({
-    where: { tournamentId },
+    where: { tournamentId, organizationId: organization.id },
     orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
   });
 

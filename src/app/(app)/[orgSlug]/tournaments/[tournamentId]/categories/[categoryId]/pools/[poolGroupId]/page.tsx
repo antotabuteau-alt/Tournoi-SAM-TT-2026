@@ -23,7 +23,7 @@ export default async function PoolMatchesPage({
   if (!category) notFound();
 
   const poolGroup = await prisma.poolGroup.findFirst({
-    where: { id: poolGroupId, categoryId },
+    where: { id: poolGroupId, categoryId, category: { organizationId: organization.id } },
     include: {
       matches: {
         include: {

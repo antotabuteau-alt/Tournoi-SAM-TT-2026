@@ -111,6 +111,10 @@ export async function registerPlayersToCategoryAction(
   categoryId: string,
   playerIds: string[]
 ): Promise<ActionResult> {
+  if (!Array.isArray(playerIds) || playerIds.length === 0 || playerIds.length > 500) {
+    return { error: "Sélection invalide." };
+  }
+
   const { organization } = await requireMembership(orgSlug, "ORGANIZER");
 
   const category = await prisma.category.findFirst({

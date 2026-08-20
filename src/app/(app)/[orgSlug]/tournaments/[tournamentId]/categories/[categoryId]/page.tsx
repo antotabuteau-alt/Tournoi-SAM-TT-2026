@@ -27,7 +27,11 @@ export default async function CategoryPage({
 
   const registeredPlayerIds = new Set(category.registrations.map((r) => r.playerId));
   const availablePlayers = await prisma.player.findMany({
-    where: { tournamentId, id: { notIn: [...registeredPlayerIds] } },
+    where: {
+      tournamentId,
+      organizationId: organization.id,
+      id: { notIn: [...registeredPlayerIds] },
+    },
     orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
   });
 

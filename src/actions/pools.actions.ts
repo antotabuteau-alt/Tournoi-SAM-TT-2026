@@ -32,6 +32,10 @@ export async function generatePoolsAction(
   mode: "auto" | "manual",
   poolCount?: number
 ): Promise<ActionResult> {
+  if (poolCount !== undefined && (!Number.isInteger(poolCount) || poolCount < 1 || poolCount > 64)) {
+    return { error: "Nombre de poules invalide." };
+  }
+
   const { organization } = await requireMembership(orgSlug, "ORGANIZER");
   const category = await loadCategoryForOrg(organization.id, tournamentId, categoryId);
   if (!category) return { error: "Catégorie introuvable." };
