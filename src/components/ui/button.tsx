@@ -2,7 +2,7 @@ import { cn } from "@/lib/cn";
 
 export const BUTTON_VARIANTS = {
   primary: "bg-brand-500 text-white hover:bg-brand-600 shadow-sm shadow-brand-500/20 font-medium",
-  accent: "bg-accent-500 text-navy-950 hover:bg-accent-400 font-extrabold shadow-sm shadow-accent-500/30",
+  accent: "bg-brand-500 text-white hover:bg-brand-600 font-extrabold shadow-sm shadow-brand-500/30",
   outline: "border border-border bg-surface text-foreground hover:bg-surface-muted font-medium",
   ghost: "text-navy-400 hover:bg-navy-900/5 hover:text-foreground font-medium",
   danger: "border border-danger-50 bg-white text-danger-600 hover:bg-danger-50 font-medium",
