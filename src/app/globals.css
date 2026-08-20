@@ -4,21 +4,23 @@
   --background: #f3f5fa;
   --foreground: #14172b;
 
-  --color-navy-950: #0c1326;
-  --color-navy-900: #101a33;
-  --color-navy-800: #172443;
-  --color-navy-700: #223056;
+  --color-navy-950: #0a2342;
+  --color-navy-900: #123055;
+  --color-navy-800: #163260;
+  --color-navy-700: #1a3a5c;
   --color-navy-400: #7c8bb3;
   --color-navy-300: #a6b1cf;
+
+  --gradient-navy-auth: linear-gradient(135deg, #0a2342 0%, #163260 55%, #1a3a5c 100%);
 
   --color-brand-600: #2348d6;
   --color-brand-500: #3357e8;
   --color-brand-400: #5b78ef;
   --color-brand-50: #eef1ff;
 
-  --color-accent-500: #f5a524;
-  --color-accent-400: #f8b84f;
-  --color-accent-50: #fff6e8;
+  --color-accent-500: #ffb400;
+  --color-accent-400: #ffc640;
+  --color-accent-50: #fff6e0;
 
   --color-success-600: #15803d;
   --color-success-500: #16a34a;
@@ -56,6 +58,7 @@
   --color-surface: var(--color-surface);
   --color-surface-muted: var(--color-surface-muted);
   --color-border: var(--color-border);
+  --gradient-navy-auth: var(--gradient-navy-auth);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -63,7 +66,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  font-family: "Segoe UI", var(--font-sans), system-ui, -apple-system, sans-serif;
 }
 
 /* Barre de scroll fine, cohérente avec le design dense de l'appli */

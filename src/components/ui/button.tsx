@@ -1,12 +1,12 @@
 import { cn } from "@/lib/cn";
 
 export const BUTTON_VARIANTS = {
-  primary: "bg-brand-500 text-white hover:bg-brand-600 shadow-sm shadow-brand-500/20",
-  accent: "bg-accent-500 text-navy-950 hover:bg-accent-400 font-bold shadow-sm shadow-accent-500/30",
-  outline: "border border-border bg-surface text-foreground hover:bg-surface-muted",
-  ghost: "text-navy-400 hover:bg-navy-900/5 hover:text-foreground",
-  danger: "border border-danger-50 bg-white text-danger-600 hover:bg-danger-50",
-  dark: "bg-navy-900 text-white hover:bg-navy-800",
+  primary: "bg-brand-500 text-white hover:bg-brand-600 shadow-sm shadow-brand-500/20 font-medium",
+  accent: "bg-accent-500 text-navy-950 hover:bg-accent-400 font-extrabold shadow-sm shadow-accent-500/30",
+  outline: "border border-border bg-surface text-foreground hover:bg-surface-muted font-medium",
+  ghost: "text-navy-400 hover:bg-navy-900/5 hover:text-foreground font-medium",
+  danger: "border border-danger-50 bg-white text-danger-600 hover:bg-danger-50 font-medium",
+  dark: "bg-navy-900 text-white hover:bg-navy-800 font-medium",
 } as const;
 
 export const BUTTON_SIZES = {
@@ -21,7 +21,7 @@ export function buttonClasses(
   className?: string
 ) {
   return cn(
-    "inline-flex items-center justify-center gap-1.5 rounded-lg font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+    "inline-flex items-center justify-center gap-1.5 rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50",
     BUTTON_VARIANTS[variant],
     BUTTON_SIZES[size],
     className

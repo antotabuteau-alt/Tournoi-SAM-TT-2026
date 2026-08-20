@@ -10,7 +10,10 @@ export function AuthCard({
   footer?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center bg-navy-950 px-6 py-16">
+    <div
+      className="flex flex-1 flex-col items-center justify-center px-6 py-16"
+      style={{ backgroundImage: "var(--gradient-navy-auth)" }}
+    >
       <div className="mb-8 flex items-center gap-2 text-white">
         <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent-500 text-lg">
           🏓

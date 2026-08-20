@@ -18,7 +18,7 @@ export default function LoginPage() {
 
   return (
     <AuthCard
-      title="Connexion"
+      title="🔐 Connexion"
       subtitle="Accède à ton espace organisateur"
       footer={
         <>
