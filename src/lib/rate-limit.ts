@@ -2,15 +2,14 @@ import "server-only";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
-const hasUpstashConfig =
-  !!process.env.UPSTASH_REDIS_REST_URL && !!process.env.UPSTASH_REDIS_REST_TOKEN;
+// L'intégration "Storage" de Vercel (Upstash for Redis) injecte les
+// identifiants sous les noms historiques KV_REST_API_URL/TOKEN plutôt que
+// UPSTASH_REDIS_REST_URL/TOKEN — on accepte les deux conventions.
+const restUrl = process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL;
+const restToken =
+  process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN;
 
-const redis = hasUpstashConfig
-  ? new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL!,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-    })
-  : null;
+const redis = restUrl && restToken ? new Redis({ url: restUrl, token: restToken }) : null;
 
 function makeLimiter(requests: number, window: `${number} ${"s" | "m" | "h"}`) {
   if (!redis) return null;
