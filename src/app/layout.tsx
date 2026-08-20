@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SAM TT Tournoi",
+  title: "Tournoi du SAM TT 2026",
   description: "Gestion de tournois de tennis de table",
 };
 

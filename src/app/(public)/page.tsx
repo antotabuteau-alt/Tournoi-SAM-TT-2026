@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { LinkButton } from "@/components/ui/link-button";
+import { BrandLogo } from "@/components/brand-logo";
 
 function ComingSoonTag() {
   return (
@@ -86,10 +87,8 @@ export default function HomePage() {
         <header>
           <nav className="mx-auto flex max-w-5xl items-center gap-3 px-6 py-5">
             <span className="flex items-center gap-2 font-semibold">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent-500">
-                🏓
-              </span>
-              SAM TT <span className="text-accent-500">Tournoi</span>
+              <BrandLogo size="sm" />
+              Tournoi du SAM TT 2026
             </span>
             <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium text-navy-300">
               100% gratuit
@@ -353,8 +352,9 @@ export default function HomePage() {
       >
         <h2 className="text-2xl font-bold">Gratuit, et ça le restera 💛</h2>
         <p className="mx-auto mt-3 max-w-xl text-navy-300">
-          SAM TT Tournoi est développé pour les clubs de l&apos;association.
-          Aucun abonnement, aucune carte bancaire requise.
+          Tournoi du SAM TT 2026 est développé pour les clubs de
+          l&apos;association. Aucun abonnement, aucune carte bancaire
+          requise.
         </p>
         <div className="mt-6">
           <LinkButton href="/register" variant="accent" size="lg">
@@ -364,8 +364,8 @@ export default function HomePage() {
       </section>
 
       <footer className="bg-navy-950 px-6 py-8 text-center text-sm text-navy-400">
-        🏓 SAM TT Tournoi — la gestion de tournois de tennis de table pour
-        l&apos;association.
+        Tournoi du SAM TT 2026 — la gestion de tournois de tennis de table
+        pour l&apos;association.
       </footer>
     </div>
   );
