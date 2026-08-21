@@ -36,7 +36,37 @@ interface PoolGroupData {
 
 const QUICK_VALUES = Array.from({ length: 16 }, (_, i) => i);
 
-function initials(name: string, max = 12): string {
+const AVATAR_COLORS = [
+  "bg-brand-500", "bg-accent-500", "bg-success-500", "bg-danger-600",
+  "bg-navy-700", "bg-purple-500", "bg-pink-500", "bg-teal-500",
+];
+
+function avatarColor(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+  return AVATAR_COLORS[hash % AVATAR_COLORS.length];
+}
+
+function initialsOf(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? parts[0]?.[1] ?? "")).toUpperCase();
+}
+
+function Avatar({ name, size = "sm" }: { name: string; size?: "sm" | "md" }) {
+  return (
+    <span
+      className={cn(
+        "flex shrink-0 items-center justify-center rounded-full font-bold text-white",
+        avatarColor(name),
+        size === "sm" ? "h-7 w-7 text-[10px]" : "h-10 w-10 text-xs"
+      )}
+    >
+      {initialsOf(name)}
+    </span>
+  );
+}
+
+function truncateName(name: string, max = 12): string {
   return name.length > max ? `${name.slice(0, max - 1)}…` : name;
 }
 
@@ -54,6 +84,26 @@ function findMatch(poolGroups: PoolGroupData[], matchId: string | null) {
     if (m) return { match: m, poolName: g.name };
   }
   return null;
+}
+
+const RANK_BADGE = [
+  "bg-gradient-to-br from-amber-300 to-amber-500 text-white shadow-sm shadow-amber-500/40",
+  "bg-gradient-to-br from-slate-300 to-slate-400 text-white shadow-sm shadow-slate-400/40",
+  "bg-gradient-to-br from-orange-300 to-orange-500 text-white shadow-sm shadow-orange-500/40",
+];
+
+function RankBadge({ rank }: { rank: number }) {
+  const gradient = RANK_BADGE[rank - 1];
+  return (
+    <span
+      className={cn(
+        "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold",
+        gradient ?? "bg-surface-muted text-navy-400"
+      )}
+    >
+      {rank}
+    </span>
+  );
 }
 
 export function AllPoolsBoard({
@@ -84,8 +134,6 @@ export function AllPoolsBoard({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  // Quand on sélectionne un autre match, on réinitialise le formulaire local
-  // sur ses données (pattern "adjusting state on prop/selection change").
   if (selectedId !== selectedIdForSets) {
     setSelectedIdForSets(selectedId);
     setSets(buildSetRows(selected, maxSets));
@@ -165,17 +213,35 @@ export function AllPoolsBoard({
   }
 
   return (
-    <div className="grid gap-0 overflow-hidden rounded-2xl border border-border bg-surface shadow-sm shadow-navy-950/[.03] lg:grid-cols-[1.4fr_1fr]">
-      <div className="flex flex-col overflow-y-auto lg:max-h-[42rem] lg:border-r lg:border-border">
+    <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr] lg:items-start">
+      <div className="flex flex-col gap-4">
         {poolGroups.map((g) => {
           const doneCount = g.matches.filter((m) => m.status === "DONE").length;
+          const pct = g.matches.length > 0 ? Math.round((doneCount / g.matches.length) * 100) : 0;
+          const complete = doneCount === g.matches.length && g.matches.length > 0;
           return (
-            <div key={g.id} className="border-b border-border last:border-0">
-              <div className="flex items-center gap-2 bg-surface-muted px-4 py-2">
-                <h3 className="text-sm font-bold">{g.name}</h3>
-                <span className="text-xs text-navy-400">
-                  {doneCount}/{g.matches.length}
-                </span>
+            <div
+              key={g.id}
+              className="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm shadow-navy-950/[.04]"
+            >
+              <div className="flex items-center justify-between gap-3 border-b border-border bg-gradient-to-r from-navy-950 to-navy-800 px-4 py-3">
+                <h3 className="text-sm font-bold text-white">{g.name}</h3>
+                <div className="flex items-center gap-2">
+                  <div className="h-1.5 w-16 overflow-hidden rounded-full bg-white/15">
+                    <div
+                      className={cn("h-full rounded-full", complete ? "bg-success-500" : "bg-accent-500")}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                  <span
+                    className={cn(
+                      "rounded-full px-2 py-0.5 text-[11px] font-bold",
+                      complete ? "bg-success-500/20 text-success-400" : "bg-white/10 text-navy-300"
+                    )}
+                  >
+                    {doneCount}/{g.matches.length}
+                  </span>
+                </div>
               </div>
               <div className="flex flex-col divide-y divide-border">
                 {g.matches.map((m) => {
@@ -189,24 +255,32 @@ export function AllPoolsBoard({
                       key={m.id}
                       onClick={() => setSelectedId(m.id)}
                       className={cn(
-                        "flex items-center justify-between gap-3 px-4 py-2.5 text-left text-sm transition-colors",
+                        "flex items-center gap-3 border-l-4 px-4 py-2.5 text-left text-sm transition-colors",
                         isSelected
-                          ? "bg-brand-50"
+                          ? "border-l-brand-500 bg-brand-50"
                           : done
-                            ? "bg-success-50 hover:bg-success-100/70"
-                            : "hover:bg-surface-muted",
+                            ? "border-l-success-500 bg-success-50/60 hover:bg-success-50"
+                            : "border-l-transparent hover:bg-surface-muted",
                         m.status === "WALKOVER" && "opacity-60"
                       )}
                     >
-                      <span className="truncate font-medium">
+                      <Avatar name={m.player1Name} />
+                      <span className="min-w-0 flex-1 truncate font-medium">
                         {m.player1Name} <span className="font-normal text-navy-400">vs</span> {m.player2Name}
                       </span>
+                      <Avatar name={m.player2Name} />
                       {m.status === "WALKOVER" ? (
-                        <span className="shrink-0 text-xs font-semibold text-danger-600">Forfait</span>
+                        <span className="shrink-0 rounded-full bg-danger-50 px-2 py-1 text-[11px] font-bold text-danger-600">
+                          Forfait
+                        </span>
                       ) : score ? (
-                        <span className="shrink-0 font-semibold text-success-600">{score}</span>
+                        <span className="shrink-0 rounded-full bg-success-100 px-2 py-1 text-[11px] font-bold text-success-700">
+                          ✓ {score}
+                        </span>
                       ) : (
-                        <span className="shrink-0 text-xs text-navy-400">à jouer</span>
+                        <span className="shrink-0 rounded-full bg-surface-muted px-2 py-1 text-[11px] font-medium text-navy-400">
+                          à jouer
+                        </span>
                       )}
                     </button>
                   );
@@ -217,24 +291,28 @@ export function AllPoolsBoard({
         })}
       </div>
 
-      <div className="flex flex-col gap-4 overflow-y-auto p-5 lg:max-h-[42rem]">
+      <div className="flex flex-col gap-4 overflow-y-auto rounded-2xl border border-border bg-surface p-5 shadow-sm shadow-navy-950/[.04] lg:sticky lg:top-4 lg:max-h-[calc(100vh-6rem)]">
         {!selected ? (
           <>
             <p className="text-[11px] font-semibold tracking-wide text-navy-400 uppercase">
-              Classements — clique un match pour saisir un score
+              🏆 Classements — clique un match pour saisir un score
             </p>
             {poolGroups.map((g) => (
               <div key={g.id}>
-                <p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-navy-500">{g.name}</p>
-                <ol className="flex flex-col divide-y divide-border rounded-lg border border-border">
+                <p className="mb-2 text-xs font-bold uppercase tracking-wide text-navy-500">{g.name}</p>
+                <ol className="flex flex-col gap-1">
                   {g.ranking.map((r) => (
-                    <li key={r.rank} className="flex items-center justify-between px-3 py-1.5 text-sm">
-                      <span className="flex items-center gap-2">
-                        <span className="w-4 text-navy-400">{r.rank}</span>
-                        <span className="font-medium">{r.playerName}</span>
+                    <li
+                      key={r.rank}
+                      className="flex items-center justify-between gap-2 rounded-xl bg-surface-muted px-3 py-2 text-sm"
+                    >
+                      <span className="flex min-w-0 items-center gap-2">
+                        <RankBadge rank={r.rank} />
+                        <Avatar name={r.playerName} />
+                        <span className="truncate font-medium">{r.playerName}</span>
                       </span>
-                      <span className="shrink-0 text-xs text-navy-400">
-                        {r.wins}V {r.wins * 2 + r.losses}pts
+                      <span className="shrink-0 text-xs font-semibold text-navy-500">
+                        {r.wins}V · {r.wins * 2 + r.losses}pts
                       </span>
                     </li>
                   ))}
@@ -257,7 +335,7 @@ export function AllPoolsBoard({
               </div>
               <button
                 onClick={() => setSelectedId(null)}
-                className="shrink-0 text-xs font-medium text-navy-400 hover:text-foreground"
+                className="shrink-0 rounded-full border border-border px-2.5 py-1 text-xs font-medium text-navy-400 hover:bg-surface-muted hover:text-foreground"
               >
                 ← Classements
               </button>
@@ -275,15 +353,27 @@ export function AllPoolsBoard({
               />
             </label>
 
-            <div className="rounded-xl bg-surface-muted p-4 text-center">
-              <div className="flex items-center justify-center gap-3 text-2xl font-bold">
-                <span className="truncate">{initials(selected.player1Name)}</span>
-                <span>{p1SetsWon}</span>
-                <span className="text-navy-300">—</span>
-                <span>{p2SetsWon}</span>
-                <span className="truncate">{initials(selected.player2Name)}</span>
+            <div className="rounded-2xl bg-gradient-to-br from-navy-950 to-navy-800 p-5 text-center text-white">
+              <div className="flex items-center justify-center gap-3">
+                <div className="flex flex-col items-center gap-1">
+                  <Avatar name={selected.player1Name} size="md" />
+                  <span className="max-w-[6rem] truncate text-xs font-medium text-navy-300">
+                    {truncateName(selected.player1Name)}
+                  </span>
+                </div>
+                <div className="flex items-baseline gap-2 text-3xl font-black">
+                  <span>{p1SetsWon}</span>
+                  <span className="text-navy-400">—</span>
+                  <span>{p2SetsWon}</span>
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <Avatar name={selected.player2Name} size="md" />
+                  <span className="max-w-[6rem] truncate text-xs font-medium text-navy-300">
+                    {truncateName(selected.player2Name)}
+                  </span>
+                </div>
               </div>
-              <p className="mt-1 text-[11px] font-semibold tracking-wide text-navy-400 uppercase">
+              <p className="mt-3 text-[11px] font-semibold tracking-wide text-accent-400 uppercase">
                 Set {activeSetNumber} · au meilleur des {maxSets}
               </p>
             </div>
