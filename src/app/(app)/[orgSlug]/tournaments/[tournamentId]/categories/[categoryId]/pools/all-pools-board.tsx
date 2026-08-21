@@ -52,22 +52,19 @@ function initialsOf(name: string): string {
   return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? parts[0]?.[1] ?? "")).toUpperCase();
 }
 
-function Avatar({ name, size = "sm" }: { name: string; size?: "sm" | "md" }) {
+function Avatar({ name, size = "sm" }: { name: string; size?: "sm" | "md" | "lg" }) {
+  const sizeClasses = { sm: "h-7 w-7 text-[10px]", md: "h-10 w-10 text-xs", lg: "h-14 w-14 text-sm" };
   return (
     <span
       className={cn(
         "flex shrink-0 items-center justify-center rounded-full font-bold text-white",
         avatarColor(name),
-        size === "sm" ? "h-7 w-7 text-[10px]" : "h-10 w-10 text-xs"
+        sizeClasses[size]
       )}
     >
       {initialsOf(name)}
     </span>
   );
-}
-
-function truncateName(name: string, max = 12): string {
-  return name.length > max ? `${name.slice(0, max - 1)}…` : name;
 }
 
 function buildSetRows(m: MatchData | null, maxSets: number): { p1: string; p2: string }[] {
@@ -291,180 +288,175 @@ export function AllPoolsBoard({
         })}
       </div>
 
-      <div className="flex flex-col gap-4 overflow-y-auto rounded-2xl border border-border bg-surface p-5 shadow-sm shadow-navy-950/[.04] lg:sticky lg:top-4 lg:max-h-[calc(100vh-6rem)]">
-        {!selected ? (
-          <>
-            <p className="text-[11px] font-semibold tracking-wide text-navy-400 uppercase">
-              🏆 Classements — clique un match pour saisir un score
-            </p>
-            {poolGroups.map((g) => (
-              <div key={g.id}>
-                <p className="mb-2 text-xs font-bold uppercase tracking-wide text-navy-500">{g.name}</p>
-                <ol className="flex flex-col gap-1">
-                  {g.ranking.map((r) => (
-                    <li
-                      key={r.rank}
-                      className="flex items-center justify-between gap-2 rounded-xl bg-surface-muted px-3 py-2 text-sm"
-                    >
-                      <span className="flex min-w-0 items-center gap-2">
-                        <RankBadge rank={r.rank} />
-                        <Avatar name={r.playerName} />
-                        <span className="truncate font-medium">{r.playerName}</span>
-                      </span>
-                      <span className="shrink-0 text-xs font-semibold text-navy-500">
-                        {r.wins}V · {r.wins * 2 + r.losses}pts
-                      </span>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            ))}
-          </>
-        ) : !selected.player1Id || !selected.player2Id ? (
-          <p className="text-sm text-navy-400">Match incomplet.</p>
-        ) : (
-          <>
-            <div className="flex items-center justify-between gap-2">
-              <div>
-                <p className="text-[11px] font-semibold tracking-wide text-navy-400 uppercase">
-                  {selectedPoolName}
-                </p>
-                <h2 className="text-lg font-bold leading-snug">
-                  {selected.player1Name} vs {selected.player2Name}
-                </h2>
-              </div>
-              <button
-                onClick={() => setSelectedId(null)}
-                className="shrink-0 rounded-full border border-border px-2.5 py-1 text-xs font-medium text-navy-400 hover:bg-surface-muted hover:text-foreground"
-              >
-                ← Classements
-              </button>
-            </div>
-
-            <label className="flex items-center gap-2 text-sm text-navy-400">
-              🧑‍⚖️ Arbitre
-              <input
-                type="text"
-                placeholder="nom…"
-                value={referee}
-                onChange={(e) => setReferee(e.target.value)}
-                onBlur={handleRefereeBlur}
-                className="flex-1 rounded-lg border border-border px-2.5 py-1.5 text-sm text-foreground"
-              />
-            </label>
-
-            <div className="rounded-2xl bg-gradient-to-br from-navy-950 to-navy-800 p-5 text-center text-white">
-              <div className="flex items-center justify-center gap-3">
-                <div className="flex flex-col items-center gap-1">
-                  <Avatar name={selected.player1Name} size="md" />
-                  <span className="max-w-[6rem] truncate text-xs font-medium text-navy-300">
-                    {truncateName(selected.player1Name)}
+      <div className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-5 shadow-sm shadow-navy-950/[.04] lg:sticky lg:top-4">
+        <p className="text-[11px] font-semibold tracking-wide text-navy-400 uppercase">
+          🏆 Classements — clique un match pour saisir un score
+        </p>
+        {poolGroups.map((g) => (
+          <div key={g.id}>
+            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-navy-500">{g.name}</p>
+            <ol className="flex flex-col gap-1">
+              {g.ranking.map((r) => (
+                <li
+                  key={r.rank}
+                  className="flex items-center justify-between gap-2 rounded-xl bg-surface-muted px-3 py-2 text-sm"
+                >
+                  <span className="flex min-w-0 items-center gap-2">
+                    <RankBadge rank={r.rank} />
+                    <Avatar name={r.playerName} />
+                    <span className="truncate font-medium">{r.playerName}</span>
                   </span>
-                </div>
-                <div className="flex items-baseline gap-2 text-3xl font-black">
-                  <span>{p1SetsWon}</span>
-                  <span className="text-navy-400">—</span>
-                  <span>{p2SetsWon}</span>
-                </div>
-                <div className="flex flex-col items-center gap-1">
-                  <Avatar name={selected.player2Name} size="md" />
-                  <span className="max-w-[6rem] truncate text-xs font-medium text-navy-300">
-                    {truncateName(selected.player2Name)}
+                  <span className="shrink-0 text-xs font-semibold text-navy-500">
+                    {r.wins}V · {r.wins * 2 + r.losses}pts
                   </span>
-                </div>
-              </div>
-              <p className="mt-3 text-[11px] font-semibold tracking-wide text-accent-400 uppercase">
-                Set {activeSetNumber} · au meilleur des {maxSets}
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              {sets.map((s, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <span className="w-14 text-xs text-navy-400">Set {i + 1}</span>
-                  <input
-                    type="number"
-                    min={0}
-                    value={s.p1}
-                    onFocus={() => setActive({ index: i, side: 1 })}
-                    onChange={(e) => updateSet(i, "p1", e.target.value)}
-                    className={cn(
-                      "w-16 rounded-lg border px-2 py-1.5 text-center text-sm",
-                      active?.index === i && active.side === 1
-                        ? "border-brand-500 ring-2 ring-brand-400/20"
-                        : "border-border"
-                    )}
-                  />
-                  <span className="text-navy-300">–</span>
-                  <input
-                    type="number"
-                    min={0}
-                    value={s.p2}
-                    onFocus={() => setActive({ index: i, side: 2 })}
-                    onChange={(e) => updateSet(i, "p2", e.target.value)}
-                    className={cn(
-                      "w-16 rounded-lg border px-2 py-1.5 text-center text-sm",
-                      active?.index === i && active.side === 2
-                        ? "border-brand-500 ring-2 ring-brand-400/20"
-                        : "border-border"
-                    )}
-                  />
-                </div>
+                </li>
               ))}
-            </div>
-
-            <div>
-              <p className="mb-1.5 text-[11px] font-semibold tracking-wide text-navy-400 uppercase">
-                Saisie rapide
-              </p>
-              <div className="grid grid-cols-8 gap-1">
-                {QUICK_VALUES.map((v) => (
-                  <button
-                    key={v}
-                    disabled={!active}
-                    onClick={() => handleQuickValue(v)}
-                    className="flex h-8 w-full items-center justify-center rounded-md border border-border text-xs font-medium hover:bg-brand-50 hover:text-brand-600 disabled:opacity-40"
-                  >
-                    {v}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {error && <p className="text-sm text-danger-600">{error}</p>}
-
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleSubmit}
-                disabled={isPending}
-                className="flex-1 rounded-lg bg-success-500 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-success-600 disabled:opacity-50"
-              >
-                {isPending ? "..." : "✓ Valider"}
-              </button>
-            </div>
-
-            <div className="border-t border-border pt-3">
-              <p className="mb-2 flex items-center gap-1 text-[11px] font-semibold tracking-wide text-accent-600 uppercase">
-                ⚠ Forfait
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => handleForfeit(1)}
-                  className="rounded-lg border border-danger-50 bg-danger-50/40 px-2 py-2 text-xs font-medium text-danger-600 hover:bg-danger-50"
-                >
-                  Forf. {selected.player1Name}
-                </button>
-                <button
-                  onClick={() => handleForfeit(2)}
-                  className="rounded-lg border border-danger-50 bg-danger-50/40 px-2 py-2 text-xs font-medium text-danger-600 hover:bg-danger-50"
-                >
-                  Forf. {selected.player2Name}
-                </button>
-              </div>
-            </div>
-          </>
-        )}
+            </ol>
+          </div>
+        ))}
       </div>
+
+      {selected && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy-950/50 p-4">
+          <div className="flex w-full max-w-3xl flex-col gap-4 rounded-3xl bg-surface p-6 shadow-2xl">
+            {!selected.player1Id || !selected.player2Id ? (
+              <p className="text-sm text-navy-400">Match incomplet.</p>
+            ) : (
+              <>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] font-semibold tracking-wide text-navy-400 uppercase">
+                      {selectedPoolName}
+                    </p>
+                    <h2 className="text-xl font-bold leading-snug">
+                      {selected.player1Name} vs {selected.player2Name}
+                    </h2>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <label className="flex items-center gap-1.5 text-xs text-navy-400">
+                      🧑‍⚖️
+                      <input
+                        type="text"
+                        placeholder="Arbitre…"
+                        value={referee}
+                        onChange={(e) => setReferee(e.target.value)}
+                        onBlur={handleRefereeBlur}
+                        className="w-28 rounded-lg border border-border px-2 py-1.5 text-xs text-foreground"
+                      />
+                    </label>
+                    <button
+                      onClick={() => setSelectedId(null)}
+                      className="flex h-8 w-8 items-center justify-center rounded-full text-navy-400 hover:bg-surface-muted hover:text-foreground"
+                      aria-label="Fermer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl bg-gradient-to-br from-navy-950 to-navy-800 p-5 text-white">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex min-w-0 flex-1 items-center gap-3">
+                      <Avatar name={selected.player1Name} size="lg" />
+                      <span className="truncate text-base font-semibold">{selected.player1Name}</span>
+                    </div>
+                    <div className="flex shrink-0 items-baseline gap-3 text-4xl font-black">
+                      <span>{p1SetsWon}</span>
+                      <span className="text-navy-400">—</span>
+                      <span>{p2SetsWon}</span>
+                    </div>
+                    <div className="flex min-w-0 flex-1 items-center justify-end gap-3">
+                      <span className="truncate text-right text-base font-semibold">{selected.player2Name}</span>
+                      <Avatar name={selected.player2Name} size="lg" />
+                    </div>
+                  </div>
+                  <p className="mt-3 text-center text-[11px] font-semibold tracking-wide text-accent-400 uppercase">
+                    Set {activeSetNumber} · au meilleur des {maxSets}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-5 gap-2">
+                  {sets.map((s, i) => (
+                    <div key={i} className="flex flex-col items-center gap-1">
+                      <span className="text-[11px] font-semibold text-navy-400">Set {i + 1}</span>
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          min={0}
+                          value={s.p1}
+                          onFocus={() => setActive({ index: i, side: 1 })}
+                          onChange={(e) => updateSet(i, "p1", e.target.value)}
+                          className={cn(
+                            "w-11 rounded-lg border px-1 py-1.5 text-center text-sm",
+                            active?.index === i && active.side === 1
+                              ? "border-brand-500 ring-2 ring-brand-400/20"
+                              : "border-border"
+                          )}
+                        />
+                        <input
+                          type="number"
+                          min={0}
+                          value={s.p2}
+                          onFocus={() => setActive({ index: i, side: 2 })}
+                          onChange={(e) => updateSet(i, "p2", e.target.value)}
+                          className={cn(
+                            "w-11 rounded-lg border px-1 py-1.5 text-center text-sm",
+                            active?.index === i && active.side === 2
+                              ? "border-brand-500 ring-2 ring-brand-400/20"
+                              : "border-border"
+                          )}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div>
+                  <p className="mb-1.5 text-[11px] font-semibold tracking-wide text-navy-400 uppercase">
+                    Saisie rapide
+                  </p>
+                  <div className="grid grid-cols-[repeat(16,minmax(0,1fr))] gap-1">
+                    {QUICK_VALUES.map((v) => (
+                      <button
+                        key={v}
+                        disabled={!active}
+                        onClick={() => handleQuickValue(v)}
+                        className="flex h-8 items-center justify-center rounded-md border border-border text-xs font-medium hover:bg-brand-50 hover:text-brand-600 disabled:opacity-40"
+                      >
+                        {v}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {error && <p className="text-sm text-danger-600">{error}</p>}
+
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={handleSubmit}
+                    disabled={isPending}
+                    className="flex-1 rounded-xl bg-success-500 px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-success-600 disabled:opacity-50"
+                  >
+                    {isPending ? "..." : "✓ Valider le score"}
+                  </button>
+                  <button
+                    onClick={() => handleForfeit(1)}
+                    className="rounded-xl border border-danger-50 bg-danger-50/40 px-3 py-3 text-xs font-medium text-danger-600 hover:bg-danger-50"
+                  >
+                    ⚠ Forf. {selected.player1Name}
+                  </button>
+                  <button
+                    onClick={() => handleForfeit(2)}
+                    className="rounded-xl border border-danger-50 bg-danger-50/40 px-3 py-3 text-xs font-medium text-danger-600 hover:bg-danger-50"
+                  >
+                    ⚠ Forf. {selected.player2Name}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
