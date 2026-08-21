@@ -52,8 +52,13 @@ function initialsOf(name: string): string {
   return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? parts[0]?.[1] ?? "")).toUpperCase();
 }
 
-function Avatar({ name, size = "sm" }: { name: string; size?: "sm" | "md" | "lg" }) {
-  const sizeClasses = { sm: "h-7 w-7 text-[10px]", md: "h-10 w-10 text-xs", lg: "h-14 w-14 text-sm" };
+function Avatar({ name, size = "sm" }: { name: string; size?: "sm" | "md" | "lg" | "xl" }) {
+  const sizeClasses = {
+    sm: "h-7 w-7 text-[10px]",
+    md: "h-10 w-10 text-xs",
+    lg: "h-14 w-14 text-sm",
+    xl: "h-20 w-20 text-lg",
+  };
   return (
     <span
       className={cn(
@@ -72,6 +77,22 @@ function buildSetRows(m: MatchData | null, maxSets: number): { p1: string; p2: s
     const s = m?.sets[i];
     return { p1: s ? String(s.player1Points) : "", p2: s ? String(s.player2Points) : "" };
   });
+}
+
+// Première case (set/côté) encore vide, en parcourant les manches dans
+// l'ordre (côté 1 puis côté 2 de chaque manche) — permet de cliquer un
+// score rapide directement sans avoir à sélectionner un champ au préalable.
+function nextEmptyCell(rows: { p1: string; p2: string }[]): { index: number; side: 1 | 2 } | null {
+  for (let i = 0; i < rows.length; i++) {
+    if (rows[i].p1 === "") return { index: i, side: 1 };
+    if (rows[i].p2 === "") return { index: i, side: 2 };
+  }
+  return null;
+}
+
+// Élision "de"/"d'" devant une voyelle ou un h muet, pour "Victoire de/d' Nom".
+function withDe(name: string): string {
+  return /^[aeiouyàâäéèêëîïôöùûü]/i.test(name) ? `d'${name}` : `de ${name}`;
 }
 
 function findMatch(poolGroups: PoolGroupData[], matchId: string | null) {
@@ -118,6 +139,7 @@ export function AllPoolsBoard({
 }) {
   const router = useRouter();
   const maxSets = bestOfSets * 2 - 1;
+  const setsToWin = bestOfSets;
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const found = findMatch(poolGroups, selectedId);
@@ -133,9 +155,10 @@ export function AllPoolsBoard({
 
   if (selectedId !== selectedIdForSets) {
     setSelectedIdForSets(selectedId);
-    setSets(buildSetRows(selected, maxSets));
+    const initialSets = buildSetRows(selected, maxSets);
+    setSets(initialSets);
     setReferee(selected?.refereeName ?? "");
-    setActive(null);
+    setActive(nextEmptyCell(initialSets));
     setError(null);
   }
 
@@ -147,9 +170,17 @@ export function AllPoolsBoard({
     );
   }
 
+  // Sans champ selectionne manuellement, on cible automatiquement la
+  // prochaine case vide : un clic sur "11" suffit, pas besoin de cliquer
+  // dans la case avant. Apres saisie, la selection avance a la case
+  // vide suivante pour enchainer les manches sans interaction superflue.
   function handleQuickValue(value: number) {
-    if (!active) return;
-    updateSet(active.index, active.side === 1 ? "p1" : "p2", String(value));
+    const target = active ?? nextEmptyCell(sets);
+    if (!target) return;
+    const key = target.side === 1 ? "p1" : "p2";
+    const updated = sets.map((s, i) => (i === target.index ? { ...s, [key]: String(value) } : s));
+    setSets(updated);
+    setActive(nextEmptyCell(updated));
   }
 
   let p1SetsWon = 0;
@@ -164,6 +195,14 @@ export function AllPoolsBoard({
     activeSetNumber = i + 2;
   }
   if (activeSetNumber > maxSets) activeSetNumber = maxSets;
+
+  const winnerName = selected
+    ? p1SetsWon >= setsToWin
+      ? selected.player1Name
+      : p2SetsWon >= setsToWin
+        ? selected.player2Name
+        : null
+    : null;
 
   function handleSubmit() {
     if (!selected) return;
@@ -318,17 +357,17 @@ export function AllPoolsBoard({
 
       {selected && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy-950/50 p-4">
-          <div className="flex w-full max-w-3xl flex-col gap-4 rounded-3xl bg-surface p-6 shadow-2xl">
+          <div className="flex w-full max-w-3xl flex-col gap-6 rounded-3xl bg-surface p-8 shadow-2xl">
             {!selected.player1Id || !selected.player2Id ? (
               <p className="text-sm text-navy-400">Match incomplet.</p>
             ) : (
               <>
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-[11px] font-semibold tracking-wide text-navy-400 uppercase">
+                    <p className="text-xs font-semibold tracking-wide text-navy-400 uppercase">
                       {selectedPoolName}
                     </p>
-                    <h2 className="text-xl font-bold leading-snug">
+                    <h2 className="text-2xl font-bold leading-snug">
                       {selected.player1Name} vs {selected.player2Name}
                     </h2>
                   </div>
@@ -341,12 +380,12 @@ export function AllPoolsBoard({
                         value={referee}
                         onChange={(e) => setReferee(e.target.value)}
                         onBlur={handleRefereeBlur}
-                        className="w-28 rounded-lg border border-border px-2 py-1.5 text-xs text-foreground"
+                        className="w-32 rounded-lg border border-border px-2 py-2 text-xs text-foreground"
                       />
                     </label>
                     <button
                       onClick={() => setSelectedId(null)}
-                      className="flex h-8 w-8 items-center justify-center rounded-full text-navy-400 hover:bg-surface-muted hover:text-foreground"
+                      className="flex h-9 w-9 items-center justify-center rounded-full text-navy-400 hover:bg-surface-muted hover:text-foreground"
                       aria-label="Fermer"
                     >
                       ✕
@@ -354,32 +393,36 @@ export function AllPoolsBoard({
                   </div>
                 </div>
 
-                <div className="rounded-2xl bg-gradient-to-br from-navy-950 to-navy-800 p-5 text-white">
+                <div className="rounded-2xl bg-gradient-to-br from-navy-950 to-navy-800 p-7 text-white">
                   <div className="flex items-center justify-between gap-4">
-                    <div className="flex min-w-0 flex-1 items-center gap-3">
-                      <Avatar name={selected.player1Name} size="lg" />
-                      <span className="truncate text-base font-semibold">{selected.player1Name}</span>
+                    <div className="flex min-w-0 flex-1 flex-col items-center gap-2 text-center">
+                      <Avatar name={selected.player1Name} size="xl" />
+                      <span className="max-w-full truncate text-base font-semibold">
+                        {selected.player1Name}
+                      </span>
                     </div>
-                    <div className="flex shrink-0 items-baseline gap-3 text-4xl font-black">
+                    <div className="flex shrink-0 items-baseline gap-4 text-6xl font-black">
                       <span>{p1SetsWon}</span>
                       <span className="text-navy-400">—</span>
                       <span>{p2SetsWon}</span>
                     </div>
-                    <div className="flex min-w-0 flex-1 items-center justify-end gap-3">
-                      <span className="truncate text-right text-base font-semibold">{selected.player2Name}</span>
-                      <Avatar name={selected.player2Name} size="lg" />
+                    <div className="flex min-w-0 flex-1 flex-col items-center gap-2 text-center">
+                      <Avatar name={selected.player2Name} size="xl" />
+                      <span className="max-w-full truncate text-base font-semibold">
+                        {selected.player2Name}
+                      </span>
                     </div>
                   </div>
-                  <p className="mt-3 text-center text-[11px] font-semibold tracking-wide text-accent-400 uppercase">
-                    Set {activeSetNumber} · au meilleur des {maxSets}
+                  <p className="mt-4 text-center text-xs font-semibold tracking-wide text-accent-400 uppercase">
+                    {winnerName ? "Match terminé" : `Set ${activeSetNumber} · au meilleur des ${maxSets}`}
                   </p>
                 </div>
 
-                <div className="grid grid-cols-5 gap-2">
+                <div className="grid grid-cols-5 gap-3">
                   {sets.map((s, i) => (
-                    <div key={i} className="flex flex-col items-center gap-1">
-                      <span className="text-[11px] font-semibold text-navy-400">Set {i + 1}</span>
-                      <div className="flex items-center gap-1">
+                    <div key={i} className="flex flex-col items-center gap-1.5">
+                      <span className="text-xs font-semibold text-navy-400">Set {i + 1}</span>
+                      <div className="flex items-center gap-1.5">
                         <input
                           type="number"
                           min={0}
@@ -387,7 +430,7 @@ export function AllPoolsBoard({
                           onFocus={() => setActive({ index: i, side: 1 })}
                           onChange={(e) => updateSet(i, "p1", e.target.value)}
                           className={cn(
-                            "w-11 rounded-lg border px-1 py-1.5 text-center text-sm",
+                            "w-14 rounded-lg border px-1 py-2.5 text-center text-base font-medium",
                             active?.index === i && active.side === 1
                               ? "border-brand-500 ring-2 ring-brand-400/20"
                               : "border-border"
@@ -400,7 +443,7 @@ export function AllPoolsBoard({
                           onFocus={() => setActive({ index: i, side: 2 })}
                           onChange={(e) => updateSet(i, "p2", e.target.value)}
                           className={cn(
-                            "w-11 rounded-lg border px-1 py-1.5 text-center text-sm",
+                            "w-14 rounded-lg border px-1 py-2.5 text-center text-base font-medium",
                             active?.index === i && active.side === 2
                               ? "border-brand-500 ring-2 ring-brand-400/20"
                               : "border-border"
@@ -412,16 +455,16 @@ export function AllPoolsBoard({
                 </div>
 
                 <div>
-                  <p className="mb-1.5 text-[11px] font-semibold tracking-wide text-navy-400 uppercase">
+                  <p className="mb-2 text-xs font-semibold tracking-wide text-navy-400 uppercase">
                     Saisie rapide
                   </p>
-                  <div className="grid grid-cols-[repeat(16,minmax(0,1fr))] gap-1">
+                  <div className="grid grid-cols-[repeat(16,minmax(0,1fr))] gap-1.5">
                     {QUICK_VALUES.map((v) => (
                       <button
                         key={v}
                         disabled={!active}
                         onClick={() => handleQuickValue(v)}
-                        className="flex h-8 items-center justify-center rounded-md border border-border text-xs font-medium hover:bg-brand-50 hover:text-brand-600 disabled:opacity-40"
+                        className="flex h-10 items-center justify-center rounded-lg border border-border text-sm font-medium hover:bg-brand-50 hover:text-brand-600 disabled:opacity-40"
                       >
                         {v}
                       </button>
@@ -435,9 +478,18 @@ export function AllPoolsBoard({
                   <button
                     onClick={handleSubmit}
                     disabled={isPending}
-                    className="flex-1 rounded-xl bg-success-500 px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-success-600 disabled:opacity-50"
+                    className={cn(
+                      "flex-1 rounded-xl px-4 py-3.5 text-sm font-bold transition-colors disabled:opacity-50",
+                      winnerName
+                        ? "bg-gradient-to-r from-accent-400 to-accent-500 text-navy-950 shadow-sm shadow-accent-500/40 hover:from-accent-500 hover:to-accent-500"
+                        : "bg-success-500 text-white hover:bg-success-600"
+                    )}
                   >
-                    {isPending ? "..." : "✓ Valider le score"}
+                    {isPending
+                      ? "..."
+                      : winnerName
+                        ? `👑 Victoire ${withDe(winnerName)}`
+                        : "✓ Valider le score"}
                   </button>
                   <button
                     onClick={() => handleForfeit(1)}
