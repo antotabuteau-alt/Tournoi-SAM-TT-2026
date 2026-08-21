@@ -218,10 +218,7 @@ export function AllPoolsBoard({
         return;
       }
       router.refresh();
-      const group = poolGroups.find((g) => g.matches.some((m) => m.id === selected.id));
-      const idx = group?.matches.findIndex((m) => m.id === selected.id) ?? -1;
-      const next = group?.matches.slice(idx + 1).find((m) => m.status !== "DONE" && m.status !== "WALKOVER");
-      setSelectedId(next?.id ?? null);
+      setSelectedId(null);
     });
   }
 
@@ -237,6 +234,7 @@ export function AllPoolsBoard({
         return;
       }
       router.refresh();
+      setSelectedId(null);
     });
   }
 
@@ -287,11 +285,10 @@ export function AllPoolsBoard({
                     ? m.sets.map((s) => `${s.player1Points}-${s.player2Points}`).join(", ")
                     : null;
                   return (
-                    <button
+                    <div
                       key={m.id}
-                      onClick={() => setSelectedId(m.id)}
                       className={cn(
-                        "flex items-center gap-3 border-l-4 px-4 py-2.5 text-left text-sm transition-colors",
+                        "flex items-center border-l-4 transition-colors",
                         isSelected
                           ? "border-l-brand-500 bg-brand-50"
                           : done
@@ -300,25 +297,39 @@ export function AllPoolsBoard({
                         m.status === "WALKOVER" && "opacity-60"
                       )}
                     >
-                      <Avatar name={m.player1Name} />
-                      <span className="min-w-0 flex-1 truncate font-medium">
-                        {m.player1Name} <span className="font-normal text-navy-400">vs</span> {m.player2Name}
-                      </span>
-                      <Avatar name={m.player2Name} />
-                      {m.status === "WALKOVER" ? (
-                        <span className="shrink-0 rounded-full bg-danger-50 px-2 py-1 text-[11px] font-bold text-danger-600">
-                          Forfait
+                      <button
+                        onClick={() => setSelectedId(m.id)}
+                        className="flex min-w-0 flex-1 items-center gap-3 px-4 py-2.5 text-left text-sm"
+                      >
+                        <Avatar name={m.player1Name} />
+                        <span className="min-w-0 flex-1 truncate font-medium">
+                          {m.player1Name} <span className="font-normal text-navy-400">vs</span> {m.player2Name}
                         </span>
-                      ) : score ? (
-                        <span className="shrink-0 rounded-full bg-success-100 px-2 py-1 text-[11px] font-bold text-success-700">
-                          ✓ {score}
-                        </span>
-                      ) : (
-                        <span className="shrink-0 rounded-full bg-surface-muted px-2 py-1 text-[11px] font-medium text-navy-400">
-                          à jouer
-                        </span>
-                      )}
-                    </button>
+                        <Avatar name={m.player2Name} />
+                        {m.status === "WALKOVER" ? (
+                          <span className="shrink-0 rounded-full bg-danger-50 px-2 py-1 text-[11px] font-bold text-danger-600">
+                            Forfait
+                          </span>
+                        ) : score ? (
+                          <span className="shrink-0 rounded-full bg-success-100 px-2 py-1 text-[11px] font-bold text-success-700">
+                            ✓ {score}
+                          </span>
+                        ) : (
+                          <span className="shrink-0 rounded-full bg-surface-muted px-2 py-1 text-[11px] font-medium text-navy-400">
+                            à jouer
+                          </span>
+                        )}
+                      </button>
+                      <a
+                        href={`/${orgSlug}/tournaments/${tournamentId}/categories/${categoryId}/pools/${g.id}/matches/${m.id}/print`}
+                        target="_blank"
+                        rel="noreferrer"
+                        title="Imprimer la feuille de match"
+                        className="mr-3 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-navy-400 hover:bg-surface-muted hover:text-foreground"
+                      >
+                        🖨
+                      </a>
+                    </div>
                   );
                 })}
               </div>
