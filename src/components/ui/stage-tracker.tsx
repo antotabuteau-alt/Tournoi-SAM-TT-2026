@@ -5,6 +5,7 @@ export interface Stage {
   label: string;
   status: "done" | "active" | "pending";
   href?: string;
+  onClick?: () => void;
 }
 
 const NODE_STYLES = {
@@ -45,6 +46,14 @@ export function StageTracker({ stages }: { stages: Stage[] }) {
               <Link href={stage.href} className="rounded-md transition-opacity hover:opacity-70">
                 {content}
               </Link>
+            ) : stage.onClick ? (
+              <button
+                type="button"
+                onClick={stage.onClick}
+                className="rounded-md transition-opacity hover:opacity-70"
+              >
+                {content}
+              </button>
             ) : (
               content
             )}

@@ -11,6 +11,7 @@ import { categoryCta } from "@/lib/category-cta";
 import { formatWallClockDateTime } from "@/lib/wall-clock";
 import { cn } from "@/lib/cn";
 import { CategoryActionsMenu } from "./category-actions-menu";
+import { CategoryPlayersModal } from "./category-players-modal";
 
 type DayFilter = "ALL" | "SATURDAY" | "SUNDAY" | "OTHER";
 
@@ -46,6 +47,7 @@ export interface CategoryCardData {
   tableRangeStart: number | null;
   tableRangeEnd: number | null;
   registrationCount: number;
+  registeredPlayers: { id: string; firstName: string; lastName: string; rankingPoints: number | null }[];
 }
 
 const TAB_META: Record<DayFilter, { label: string; barColor: string; dotColor: string }> = {
@@ -68,6 +70,8 @@ export function CategoryCardsList({
 }) {
   const [items, setItems] = useState(categories);
   const [tab, setTab] = useState<DayFilter>("ALL");
+  const [playersModalCategoryId, setPlayersModalCategoryId] = useState<string | null>(null);
+  const playersModalCategory = items.find((c) => c.id === playersModalCategoryId) ?? null;
 
   // Resynchronise avec les données serveur fraîches (ex: après router.refresh()
   // suite à une sauvegarde de réglages) — sans ça, le state local figé au premier
@@ -219,13 +223,28 @@ export function CategoryCardsList({
                     orgSlug,
                     tournamentId,
                     categoryId: c.id,
-                  })}
+                  }).map((stage) =>
+                    stage.label === "Joueurs"
+                      ? { ...stage, href: undefined, onClick: () => setPlayersModalCategoryId(c.id) }
+                      : stage
+                  )}
                 />
               </div>
             </Card>
           );
         })}
       </div>
+
+      {playersModalCategory && (
+        <CategoryPlayersModal
+          orgSlug={orgSlug}
+          tournamentId={tournamentId}
+          categoryId={playersModalCategory.id}
+          categoryName={playersModalCategory.name}
+          initialPlayers={playersModalCategory.registeredPlayers}
+          onClose={() => setPlayersModalCategoryId(null)}
+        />
+      )}
     </div>
   );
 }

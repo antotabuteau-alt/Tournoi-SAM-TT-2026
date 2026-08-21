@@ -77,5 +77,6 @@ export async function createCategoryAction(
     },
   });
 
+  revalidatePath(`/${orgSlug}/tournaments/${tournamentId}`, "layout");
   redirect(`/${orgSlug}/tournaments/${tournamentId}`);
 }

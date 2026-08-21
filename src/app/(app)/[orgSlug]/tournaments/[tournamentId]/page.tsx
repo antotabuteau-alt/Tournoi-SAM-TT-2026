@@ -18,7 +18,13 @@ export default async function TournamentPage({
     include: {
       categories: {
         orderBy: { createdAt: "asc" },
-        include: { _count: { select: { registrations: true } } },
+        include: {
+          _count: { select: { registrations: true } },
+          registrations: {
+            orderBy: [{ seed: "asc" }, { createdAt: "asc" }],
+            include: { player: { select: { id: true, firstName: true, lastName: true, rankingPoints: true } } },
+          },
+        },
       },
       _count: { select: { players: true } },
     },
@@ -53,6 +59,12 @@ export default async function TournamentPage({
               tableRangeStart: c.tableRangeStart,
               tableRangeEnd: c.tableRangeEnd,
               registrationCount: c._count.registrations,
+              registeredPlayers: c.registrations.map((r) => ({
+                id: r.player.id,
+                firstName: r.player.firstName,
+                lastName: r.player.lastName,
+                rankingPoints: r.player.rankingPoints,
+              })),
             }))}
           />
 
