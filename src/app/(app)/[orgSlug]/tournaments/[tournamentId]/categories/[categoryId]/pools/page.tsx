@@ -6,9 +6,8 @@ import { computePoolRanking } from "@/lib/pool-view";
 import { PoolGenerationForm } from "./pool-generation-form";
 import { PoolDndBoard } from "./pool-dnd-board";
 import { ResetPoolsButton } from "./reset-pools-button";
+import { AllPoolsBoard } from "./all-pools-board";
 import { LinkButton } from "@/components/ui/link-button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/cn";
 
 export default async function PoolsPage({
@@ -19,22 +18,36 @@ export default async function PoolsPage({
   const { orgSlug, tournamentId, categoryId } = await params;
   const { organization } = await requireMembership(orgSlug, "ORGANIZER");
 
-  const category = await prisma.category.findFirst({
-    where: { id: categoryId, organizationId: organization.id, tournamentId },
-    include: {
-      registrations: {
-        include: { player: true },
-        orderBy: [{ seed: "asc" }, { createdAt: "asc" }],
-      },
-      poolGroups: {
-        orderBy: { name: "asc" },
-        include: {
-          members: { include: { registration: { include: { player: true } } } },
-          matches: { include: { sets: true } },
+  const [category, tournamentCategories] = await Promise.all([
+    prisma.category.findFirst({
+      where: { id: categoryId, organizationId: organization.id, tournamentId },
+      include: {
+        registrations: {
+          include: { player: true },
+          orderBy: [{ seed: "asc" }, { createdAt: "asc" }],
+        },
+        poolGroups: {
+          orderBy: { name: "asc" },
+          include: {
+            members: { include: { registration: { include: { player: true } } } },
+            matches: {
+            orderBy: { createdAt: "asc" },
+            include: {
+              player1: { include: { player: true } },
+              player2: { include: { player: true } },
+              sets: { orderBy: { setNumber: "asc" } },
+            },
+          },
+          },
         },
       },
-    },
-  });
+    }),
+    prisma.category.findMany({
+      where: { tournamentId, organizationId: organization.id },
+      select: { id: true, name: true },
+      orderBy: { createdAt: "asc" },
+    }),
+  ]);
   if (!category) notFound();
 
   const hasPools = category.poolGroups.length > 0;
@@ -55,6 +68,25 @@ export default async function PoolsPage({
           ← Retour à la catégorie
         </LinkButton>
       </div>
+
+      {tournamentCategories.length > 1 && (
+        <div className="flex flex-wrap gap-1.5">
+          {tournamentCategories.map((c) => (
+            <Link
+              key={c.id}
+              href={`/${orgSlug}/tournaments/${tournamentId}/categories/${c.id}/pools`}
+              className={cn(
+                "rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors",
+                c.id === categoryId
+                  ? "border-brand-500 bg-brand-50 text-brand-700"
+                  : "border-border text-navy-400 hover:bg-surface-muted"
+              )}
+            >
+              {c.name}
+            </Link>
+          ))}
+        </div>
+      )}
 
       {!hasPools && (
         <PoolGenerationForm
@@ -92,8 +124,12 @@ export default async function PoolsPage({
 
       {hasMatches && (
         <div className="flex flex-col gap-5">
-          <div className="grid gap-4 lg:grid-cols-2">
-            {category.poolGroups.map((group) => {
+          <AllPoolsBoard
+            orgSlug={orgSlug}
+            tournamentId={tournamentId}
+            categoryId={categoryId}
+            bestOfSets={category.bestOfSets}
+            poolGroups={category.poolGroups.map((group) => {
               const registrationIds = group.members.map((m) => m.registrationId);
               const initialSeedOrder = [...group.members]
                 .sort((a, b) => (a.seedInPool ?? 999) - (b.seedInPool ?? 999))
@@ -105,74 +141,32 @@ export default async function PoolsPage({
                   `${m.registration.player.firstName} ${m.registration.player.lastName}`,
                 ])
               );
-              const doneCount = group.matches.filter((m) => m.status === "DONE").length;
-              const allDone = doneCount === group.matches.length;
-
-              return (
-                <Card key={group.id} className="overflow-hidden p-0">
-                  <div className="flex items-center justify-between border-b border-border bg-surface-muted px-4 py-2.5">
-                    <div className="flex items-center gap-2">
-                      <h2 className="font-semibold">{group.name}</h2>
-                      <span className="text-xs text-navy-400">
-                        {doneCount}/{group.matches.length}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {allDone && <Badge variant="success">Terminée</Badge>}
-                      <Link
-                        href={`/${orgSlug}/tournaments/${tournamentId}/categories/${categoryId}/pools/${group.id}`}
-                        className="text-xs font-medium text-brand-600 hover:underline"
-                      >
-                        Saisir les scores →
-                      </Link>
-                    </div>
-                  </div>
-
-                  <table className="w-full text-sm">
-                    <tbody>
-                      {ranking.map((row) => (
-                        <tr key={row.player} className="border-b border-border last:border-0">
-                          <td className="w-6 py-1.5 pl-4 text-navy-400">{row.rank}</td>
-                          <td className="py-1.5 font-medium">{namesById.get(row.player)}</td>
-                          <td className="py-1.5 pr-4 text-right text-navy-400">
-                            {row.wins}V-{row.losses}D
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-
-                  <div className="flex flex-col gap-1 border-t border-border p-3">
-                    {group.matches.map((m) => {
-                      const p1 = namesById.get(m.player1Id ?? "") ?? "?";
-                      const p2 = namesById.get(m.player2Id ?? "") ?? "?";
-                      const done = m.status === "DONE";
-                      const score = m.sets
-                        .sort((a, b) => a.setNumber - b.setNumber)
-                        .map((s) => `${s.player1Points}-${s.player2Points}`)
-                        .join(", ");
-                      return (
-                        <div
-                          key={m.id}
-                          className={cn(
-                            "flex items-center justify-between rounded-md px-2 py-1.5 text-xs",
-                            done ? "bg-success-50" : "bg-surface-muted"
-                          )}
-                        >
-                          <span className="truncate">
-                            {p1} <span className="text-navy-400">vs</span> {p2}
-                          </span>
-                          <span className={cn("shrink-0 pl-2", done ? "font-semibold text-success-600" : "text-navy-400")}>
-                            {done ? score : "à jouer"}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </Card>
-              );
+              return {
+                id: group.id,
+                name: group.name,
+                ranking: ranking.map((r) => ({
+                  rank: r.rank,
+                  playerName: namesById.get(r.player) ?? "?",
+                  wins: r.wins,
+                  losses: r.losses,
+                })),
+                matches: group.matches.map((m) => ({
+                  id: m.id,
+                  player1Id: m.player1Id,
+                  player2Id: m.player2Id,
+                  player1Name: m.player1
+                    ? `${m.player1.player?.firstName ?? ""} ${m.player1.player?.lastName ?? ""}`.trim()
+                    : "?",
+                  player2Name: m.player2
+                    ? `${m.player2.player?.firstName ?? ""} ${m.player2.player?.lastName ?? ""}`.trim()
+                    : "?",
+                  status: m.status,
+                  refereeName: m.refereeName,
+                  sets: m.sets.map((s) => ({ player1Points: s.player1Points, player2Points: s.player2Points })),
+                })),
+              };
             })}
-          </div>
+          />
           <ResetPoolsButton orgSlug={orgSlug} tournamentId={tournamentId} categoryId={categoryId} />
         </div>
       )}
