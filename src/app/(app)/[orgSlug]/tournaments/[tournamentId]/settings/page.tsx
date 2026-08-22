@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { TournamentToolbar } from "../tournament-toolbar";
 import { Card } from "@/components/ui/card";
 import { SettingsForm } from "./settings-form";
+import { DuplicateTournamentButton } from "./duplicate-tournament-button";
 
 export default async function TournamentSettingsPage({
   params,
@@ -37,6 +38,19 @@ export default async function TournamentSettingsPage({
             location={tournament.location ?? ""}
           />
         </Card>
+
+        <div>
+          <h2 className="mb-2 text-sm font-semibold tracking-wide text-navy-400 uppercase">
+            Réutiliser cette configuration
+          </h2>
+          <Card className="p-6">
+            <p className="mb-3 text-sm text-navy-400">
+              Crée un nouveau tournoi avec les mêmes tableaux (format, poules, manches...),
+              sans les joueurs ni les scores — pratique pour relancer l&apos;édition suivante.
+            </p>
+            <DuplicateTournamentButton orgSlug={orgSlug} tournamentId={tournamentId} />
+          </Card>
+        </div>
       </div>
     </div>
   );

@@ -211,6 +211,7 @@ model Player {
   email          String?
   phone          String?
   rankingPoints  Int?
+  checkedInAt    DateTime?
   createdAt      DateTime @default(now())
 
   tournament    Tournament             @relation(fields: [tournamentId], references: [id], onDelete: Cascade)

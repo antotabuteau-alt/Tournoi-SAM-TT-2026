@@ -156,6 +156,28 @@ export async function importPlayersAction(
   return { success: true, imported: validRows.length };
 }
 
+export async function toggleCheckInAction(
+  orgSlug: string,
+  tournamentId: string,
+  playerId: string,
+  checkedIn: boolean
+): Promise<ActionResult> {
+  const { organization } = await requireMembership(orgSlug, "ORGANIZER");
+
+  const player = await prisma.player.findFirst({
+    where: { id: playerId, organizationId: organization.id, tournamentId },
+  });
+  if (!player) return { error: "Joueur introuvable." };
+
+  await prisma.player.update({
+    where: { id: playerId },
+    data: { checkedInAt: checkedIn ? new Date() : null },
+  });
+
+  revalidatePath(`/${orgSlug}/tournaments/${tournamentId}/players`);
+  return { success: true };
+}
+
 export async function registerPlayersToCategoryAction(
   orgSlug: string,
   tournamentId: string,

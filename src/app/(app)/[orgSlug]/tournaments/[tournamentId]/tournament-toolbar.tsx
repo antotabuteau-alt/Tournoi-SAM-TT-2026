@@ -1,19 +1,16 @@
 import Link from "next/link";
-import { LinkButton } from "@/components/ui/link-button";
 
 export function TournamentToolbar({
   orgSlug,
   tournamentId,
   tournamentName,
-  publicSlug,
 }: {
   orgSlug: string;
   tournamentId: string;
   tournamentName: string;
-  publicSlug: string;
+  publicSlug?: string;
 }) {
   const base = `/${orgSlug}/tournaments/${tournamentId}`;
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
   return (
     <div className="flex flex-wrap items-center gap-2 border-b border-border bg-surface px-4 py-3">
@@ -35,16 +32,6 @@ export function TournamentToolbar({
       <h1 className="mx-2 flex-1 truncate text-lg font-bold">{tournamentName}</h1>
 
       <div className="flex items-center gap-2">
-        <LinkButton
-          href={`${baseUrl}/t/${publicSlug}`}
-          target="_blank"
-          rel="noreferrer"
-          variant="primary"
-          size="sm"
-          className="bg-success-500 hover:bg-success-600"
-        >
-          👁 Vue publique
-        </LinkButton>
         <Link
           href={`${base}/qrcode`}
           className="flex h-8 w-8 items-center justify-center rounded-lg border border-border hover:bg-surface-muted"

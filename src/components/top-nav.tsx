@@ -149,6 +149,18 @@ export function TopNav({
           </span>
         </>
       )}
+
+      {navData?.publicSlug && (
+        <a
+          href={`/t/${navData.publicSlug}`}
+          target="_blank"
+          rel="noreferrer"
+          className="ml-auto flex h-7 shrink-0 items-center gap-1 rounded-lg bg-success-50 px-2.5 text-xs font-semibold text-success-700 hover:bg-success-100"
+          title="Ouvrir la vue publique du tournoi dans un nouvel onglet"
+        >
+          👁 Vue publique
+        </a>
+      )}
     </div>
   );
 }

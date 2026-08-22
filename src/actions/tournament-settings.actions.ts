@@ -1,6 +1,8 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
+import { nanoid } from "nanoid";
 import { requireMembership } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { createTournamentSchema } from "@/lib/validators/tournament.schema";
@@ -38,4 +40,53 @@ export async function updateTournamentSettingsAction(
   });
 
   redirect(`/${orgSlug}/tournaments/${tournamentId}`);
+}
+
+export async function duplicateTournamentAction(
+  orgSlug: string,
+  tournamentId: string
+): Promise<ActionResult> {
+  const { organization } = await requireMembership(orgSlug, "ORGANIZER");
+
+  const tournament = await prisma.tournament.findFirst({
+    where: { id: tournamentId, organizationId: organization.id },
+    include: { categories: true },
+  });
+  if (!tournament) return { error: "Tournoi introuvable." };
+
+  const copy = await prisma.$transaction(async (tx) => {
+    const newTournament = await tx.tournament.create({
+      data: {
+        organizationId: organization.id,
+        name: `${tournament.name} (copie)`,
+        date: tournament.date,
+        location: tournament.location,
+        publicSlug: nanoid(12),
+      },
+    });
+
+    if (tournament.categories.length > 0) {
+      await tx.category.createMany({
+        data: tournament.categories.map((c) => ({
+          organizationId: organization.id,
+          tournamentId: newTournament.id,
+          name: c.name,
+          format: c.format,
+          poolTargetSize: c.poolTargetSize,
+          poolQualifiersCount: c.poolQualifiersCount,
+          bestOfSets: c.bestOfSets,
+          poolCount: c.poolCount,
+          tableRangeStart: c.tableRangeStart,
+          tableRangeEnd: c.tableRangeEnd,
+          repechage: c.repechage,
+          bracketType: c.bracketType,
+        })),
+      });
+    }
+
+    return newTournament;
+  });
+
+  revalidatePath(`/${orgSlug}`, "layout");
+  redirect(`/${orgSlug}/tournaments/${copy.id}`);
 }

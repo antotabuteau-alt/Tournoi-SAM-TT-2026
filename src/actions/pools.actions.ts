@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireMembership } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
-import { computePoolCount, generateSnakePools } from "@/lib/seeding/snake-pools";
+import { avoidSameClubCollisions, computePoolCount, generateSnakePools } from "@/lib/seeding/snake-pools";
 import { roundRobinPairs } from "@/lib/round-robin";
 import type { ActionResult } from "@/lib/action-result";
 
@@ -19,7 +19,10 @@ async function loadCategoryForOrg(
   return prisma.category.findFirst({
     where: { id: categoryId, organizationId, tournamentId },
     include: {
-      registrations: { orderBy: [{ seed: "asc" }, { createdAt: "asc" }] },
+      registrations: {
+        orderBy: [{ seed: "asc" }, { createdAt: "asc" }],
+        include: { player: { select: { club: true } } },
+      },
       poolGroups: { include: { members: true } },
     },
   });
@@ -59,7 +62,8 @@ export async function generatePoolsAction(
       })),
     });
   } else {
-    const pools = generateSnakePools(category.registrations, count);
+    const snakePools = generateSnakePools(category.registrations, count);
+    const pools = avoidSameClubCollisions(snakePools, (reg) => reg.player.club);
     for (let i = 0; i < pools.length; i++) {
       const group = await prisma.poolGroup.create({
         data: { categoryId, name: poolLetterName(i) },

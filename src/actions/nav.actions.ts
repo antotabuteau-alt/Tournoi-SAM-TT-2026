@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 
 export interface TournamentNavData {
   tournamentName: string;
+  publicSlug: string;
   categories: { id: string; name: string }[];
   matchesInProgress: number;
 }
@@ -36,6 +37,7 @@ export async function getTournamentNavData(
 
   return {
     tournamentName: tournament.name,
+    publicSlug: tournament.publicSlug,
     categories: tournament.categories,
     matchesInProgress,
   };

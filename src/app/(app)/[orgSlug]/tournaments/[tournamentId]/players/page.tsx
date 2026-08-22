@@ -3,6 +3,7 @@ import { requireMembership } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { AddPlayerForm } from "./add-player-form";
 import { GenerateTestPlayersButton } from "./generate-test-players-button";
+import { PlayersList } from "./players-list";
 import { Card } from "@/components/ui/card";
 import { LinkButton } from "@/components/ui/link-button";
 import { TournamentToolbar } from "../tournament-toolbar";
@@ -23,7 +24,30 @@ export default async function PlayersPage({
   const players = await prisma.player.findMany({
     where: { tournamentId, organizationId: organization.id },
     orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+    include: {
+      registrations: {
+        include: {
+          category: { select: { name: true } },
+          matchesAsP1: { where: { status: "SCHEDULED", player2Id: { not: null } }, select: { id: true } },
+          matchesAsP2: { where: { status: "SCHEDULED", player1Id: { not: null } }, select: { id: true } },
+        },
+      },
+    },
   });
+
+  const playerRows = players.map((p) => ({
+    id: p.id,
+    firstName: p.firstName,
+    lastName: p.lastName,
+    club: p.club,
+    checkedInAt: p.checkedInAt,
+    conflictCategories: p.registrations
+      .filter((r) => r.matchesAsP1.length > 0 || r.matchesAsP2.length > 0)
+      .map((r) => r.category.name),
+  }));
+  for (const row of playerRows) {
+    if (row.conflictCategories.length < 2) row.conflictCategories = [];
+  }
 
   return (
     <div className="flex flex-1 flex-col">
@@ -34,38 +58,31 @@ export default async function PlayersPage({
         publicSlug={tournament.publicSlug}
       />
       <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-5 px-6 py-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold">📝 Inscriptions / Joueurs</h2>
             <p className="text-sm text-navy-400">{players.length} joueur(s)</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <GenerateTestPlayersButton orgSlug={orgSlug} tournamentId={tournamentId} />
             <LinkButton href={`/${orgSlug}/tournaments/${tournamentId}/players/import`} variant="outline">
               📄 Importer un CSV
             </LinkButton>
+            <LinkButton href={`/${orgSlug}/tournaments/${tournamentId}/players/badges/print`} variant="outline">
+              🏷️ Étiquettes
+            </LinkButton>
+            <a
+              href={`/api/tournaments/${tournamentId}/standings`}
+              className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-surface-muted"
+            >
+              📊 Classements (CSV)
+            </a>
           </div>
         </div>
 
         <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
           <Card className="p-4">
-            {players.length === 0 ? (
-              <p className="py-6 text-center text-sm text-navy-400">Aucun joueur pour le moment.</p>
-            ) : (
-              <ul className="flex max-h-[32rem] flex-col divide-y divide-border overflow-y-auto">
-                {players.map((p) => (
-                  <li
-                    key={p.id}
-                    className="flex items-center justify-between gap-3 py-2 text-sm"
-                  >
-                    <span className="truncate">
-                      {p.firstName} {p.lastName}
-                    </span>
-                    <span className="shrink-0 truncate text-xs text-navy-400">{p.club}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <PlayersList orgSlug={orgSlug} tournamentId={tournamentId} players={playerRows} />
           </Card>
 
           <Card className="p-4">
