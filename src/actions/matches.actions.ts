@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, refresh } from "next/cache";
 import { requireMembership } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { computeMatchOutcome, type SetInput } from "@/lib/match-scoring";
@@ -88,6 +88,7 @@ export async function submitPoolScoreAction(
     `/${orgSlug}/tournaments/${tournamentId}/categories/${categoryId}/pools`
   );
   revalidatePath(`/${orgSlug}/tournaments/${tournamentId}`);
+  refresh();
   return { success: true };
 }
 
