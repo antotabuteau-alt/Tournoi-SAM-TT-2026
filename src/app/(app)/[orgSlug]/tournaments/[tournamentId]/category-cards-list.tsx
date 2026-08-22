@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { StatTile } from "@/components/ui/stat-tile";
 import { LinkButton } from "@/components/ui/link-button";
 import { StageTracker } from "@/components/ui/stage-tracker";
@@ -103,9 +104,9 @@ export function CategoryCardsList({
       <div className="flex flex-col gap-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex gap-3">
-            <StatTile label="Joueurs" value={playerCount} />
-            <StatTile label="Tableaux" value={0} />
-            <StatTile label="Terminés" value={0} />
+            <StatTile label="Joueurs" value={playerCount} icon="👥" accent="brand" />
+            <StatTile label="Tableaux" value={0} icon="🏓" accent="accent" />
+            <StatTile label="Terminés" value={0} icon="✓" accent="success" />
           </div>
           <Link
             href={`/${orgSlug}/tournaments/${tournamentId}/players`}
@@ -164,9 +165,9 @@ export function CategoryCardsList({
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex gap-3">
-          <StatTile label="Joueurs" value={playerCount} />
-          <StatTile label="Tableaux" value={visible.length} />
-          <StatTile label="Terminés" value={finishedVisible} />
+          <StatTile label="Joueurs" value={playerCount} icon="👥" accent="brand" />
+          <StatTile label="Tableaux" value={visible.length} icon="🏓" accent="accent" />
+          <StatTile label="Terminés" value={finishedVisible} icon="✓" accent="success" />
         </div>
         <Link
           href={`/${orgSlug}/tournaments/${tournamentId}/players`}
@@ -191,7 +192,9 @@ export function CategoryCardsList({
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold">{c.name}</h3>
-                    <span className="text-xs text-navy-400">{FORMAT_LABELS[c.format]}</span>
+                    <Badge variant={c.status === "FINISHED" ? "success" : "brand"}>
+                      {FORMAT_LABELS[c.format]}
+                    </Badge>
                   </div>
                   <p className="text-xs text-navy-400">
                     {c.registrationCount} joueur(s)

@@ -130,6 +130,17 @@ export function AllPoolsBoard({
                   >
                     {doneCount}/{g.matches.length}
                   </span>
+                  {g.matches.length > 0 && (
+                    <a
+                      href={`/${orgSlug}/tournaments/${tournamentId}/categories/${categoryId}/pools/${g.id}/print`}
+                      target="_blank"
+                      rel="noreferrer"
+                      title="Imprimer toutes les feuilles de match de cette poule"
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-navy-300 hover:bg-white/10 hover:text-white"
+                    >
+                      🖨
+                    </a>
+                  )}
                 </div>
               </div>
               <div className="flex flex-col divide-y divide-border">

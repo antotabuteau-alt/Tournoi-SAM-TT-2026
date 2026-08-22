@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
 import { signOutAction } from "@/actions/auth.actions";
 import { getTournamentNavData, type TournamentNavData } from "@/actions/nav.actions";
+import { TopNav } from "@/components/top-nav";
 
 interface TournamentNavItem {
   id: string;
@@ -44,21 +45,35 @@ export function AppShell({
     return () => {
       cancelled = true;
     };
-  }, [orgSlug, currentTournamentId]);
+    // `tournaments` (recalculée côté serveur à chaque router.refresh()) sert de
+    // signal de fraîcheur : sans elle, cet effet ne se redéclencherait qu'au
+    // changement de tournamentId et navData resterait figé (tableaux manquants
+    // dans la sidebar/le fil d'ariane) après ajout/suppression d'un tableau.
+  }, [orgSlug, currentTournamentId, pathname, tournaments]);
 
   const sidebarContent = (
     <>
-      <Link href={`/${orgSlug}/settings`} className="flex items-center gap-3 px-5 py-5 hover:opacity-80">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white text-lg font-bold text-navy-900">
-          {orgLogoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={orgLogoUrl} alt="" className="h-full w-full object-contain" />
-          ) : (
-            orgName.slice(0, 1).toUpperCase()
-          )}
-        </div>
-        <span className="truncate font-semibold text-white">{orgName}</span>
-      </Link>
+      <div className="flex items-center gap-2 px-5 py-5">
+        <Link href={`/${orgSlug}`} className="flex min-w-0 flex-1 items-center gap-3 hover:opacity-80">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white text-lg font-bold text-navy-900">
+            {orgLogoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={orgLogoUrl} alt="" className="h-full w-full object-contain" />
+            ) : (
+              orgName.slice(0, 1).toUpperCase()
+            )}
+          </div>
+          <span className="truncate font-semibold text-white">{orgName}</span>
+        </Link>
+        <Link
+          href={`/${orgSlug}/settings`}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-navy-300 hover:bg-white/10 hover:text-white"
+          title="Paramètres du club"
+          aria-label="Paramètres du club"
+        >
+          ⚙
+        </Link>
+      </div>
 
       <nav className="flex-1 overflow-y-auto px-3 pb-4">
         <div className="px-2 pb-2 text-[11px] font-semibold tracking-wider text-navy-400 uppercase">
@@ -187,7 +202,16 @@ export function AppShell({
           </button>
           <span className="truncate font-semibold">{orgName}</span>
         </header>
-        <main className="flex-1 overflow-y-auto print:overflow-visible">{children}</main>
+        <main className="flex-1 overflow-y-auto print:overflow-visible">
+          <TopNav
+            orgSlug={orgSlug}
+            pathname={pathname ?? ""}
+            tournamentId={inTournamentContext ? currentTournamentId : undefined}
+            tournaments={tournaments}
+            navData={navData}
+          />
+          {children}
+        </main>
       </div>
     </div>
   );
