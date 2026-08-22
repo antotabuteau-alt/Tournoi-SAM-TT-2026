@@ -81,6 +81,7 @@ export function CategoryPlayersModal({
         setError(res.error);
         return;
       }
+      setPlayers((prev) => [...prev, ...(res.created ?? [])]);
       refreshFromServer();
     });
   }
@@ -111,7 +112,9 @@ export function CategoryPlayersModal({
             setError(res.error);
             return;
           }
-          setCsvSummary(`${res.imported} joueur(s) importé(s).`);
+          const imported = res.imported ?? [];
+          setPlayers((prev) => [...prev, ...imported]);
+          setCsvSummary(`${imported.length} joueur(s) importé(s).`);
           if (fileRef.current) fileRef.current.value = "";
           refreshFromServer();
         });

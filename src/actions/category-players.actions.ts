@@ -97,12 +97,19 @@ export async function addPlayerToCategoryManuallyAction(
   return { success: true };
 }
 
+interface CreatedPlayer {
+  id: string;
+  firstName: string;
+  lastName: string;
+  rankingPoints: number | null;
+}
+
 export async function generateTestPlayersForCategoryAction(
   orgSlug: string,
   tournamentId: string,
   categoryId: string,
   count: number
-): Promise<ActionResult & { created?: number }> {
+): Promise<ActionResult & { created?: CreatedPlayer[] }> {
   const { organization } = await requireMembership(orgSlug, "ORGANIZER");
   const category = await loadCategoryForOrg(organization.id, tournamentId, categoryId);
   if (!category) return { error: "Tableau introuvable." };
@@ -136,7 +143,15 @@ export async function generateTestPlayersForCategoryAction(
   await recomputeCategorySeeds(categoryId);
 
   revalidatePath(`/${orgSlug}/tournaments/${tournamentId}`);
-  return { success: true, created: count };
+  return {
+    success: true,
+    created: players.map((p) => ({
+      id: p.id,
+      firstName: p.firstName,
+      lastName: p.lastName,
+      rankingPoints: p.rankingPoints,
+    })),
+  };
 }
 
 export async function importCsvPlayersToCategoryAction(
@@ -144,7 +159,7 @@ export async function importCsvPlayersToCategoryAction(
   tournamentId: string,
   categoryId: string,
   rows: { name: string; points?: number }[]
-): Promise<ActionResult & { imported?: number }> {
+): Promise<ActionResult & { imported?: CreatedPlayer[] }> {
   const { organization } = await requireMembership(orgSlug, "ORGANIZER");
   const category = await loadCategoryForOrg(organization.id, tournamentId, categoryId);
   if (!category) return { error: "Tableau introuvable." };
@@ -178,5 +193,13 @@ export async function importCsvPlayersToCategoryAction(
   await recomputeCategorySeeds(categoryId);
 
   revalidatePath(`/${orgSlug}/tournaments/${tournamentId}`);
-  return { success: true, imported: players.length };
+  return {
+    success: true,
+    imported: players.map((p) => ({
+      id: p.id,
+      firstName: p.firstName,
+      lastName: p.lastName,
+      rankingPoints: p.rankingPoints,
+    })),
+  };
 }
