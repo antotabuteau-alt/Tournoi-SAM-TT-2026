@@ -9,6 +9,7 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { movePoolMemberAction, generatePoolMatchesAction } from "@/actions/pools.actions";
+import type { BoardPoolGroup } from "@/lib/pool-board-data";
 import { Button } from "@/components/ui/button";
 
 interface Member {
@@ -80,12 +81,14 @@ export function PoolDndBoard({
   categoryId,
   poolGroups,
   unassigned,
+  onMatchesGenerated,
 }: {
   orgSlug: string;
   tournamentId: string;
   categoryId: string;
   poolGroups: PoolGroupView[];
   unassigned: Member[];
+  onMatchesGenerated: (poolGroups: BoardPoolGroup[]) => void;
 }) {
   const router = useRouter();
   const [groups, setGroups] = useState(poolGroups);
@@ -150,6 +153,7 @@ export function PoolDndBoard({
         setError(res.error);
         return;
       }
+      onMatchesGenerated(res.poolGroups ?? []);
       router.refresh();
     });
   }

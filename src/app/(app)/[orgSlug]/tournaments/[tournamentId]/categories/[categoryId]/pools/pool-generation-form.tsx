@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { generatePoolsAction } from "@/actions/pools.actions";
+import type { DndPoolGroup, DndMember } from "@/lib/pool-board-data";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
@@ -13,12 +14,14 @@ export function PoolGenerationForm({
   categoryId,
   playerCount,
   poolTargetSize,
+  onGenerated,
 }: {
   orgSlug: string;
   tournamentId: string;
   categoryId: string;
   playerCount: number;
   poolTargetSize: number;
+  onGenerated: (data: { poolGroups: DndPoolGroup[]; unassigned: DndMember[] }) => void;
 }) {
   const router = useRouter();
   const suggestedCount = Math.max(1, Math.ceil(playerCount / poolTargetSize));
@@ -34,6 +37,7 @@ export function PoolGenerationForm({
         setError(res.error);
         return;
       }
+      onGenerated({ poolGroups: res.poolGroups ?? [], unassigned: res.unassigned ?? [] });
       router.refresh();
     });
   }

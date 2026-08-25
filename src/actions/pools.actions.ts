@@ -5,6 +5,13 @@ import { requireMembership } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { avoidSameClubCollisions, computePoolCount, generateSnakePools } from "@/lib/seeding/snake-pools";
 import { roundRobinPairs } from "@/lib/round-robin";
+import {
+  loadPoolDndData,
+  loadPoolBoardData,
+  type DndPoolGroup,
+  type DndMember,
+  type BoardPoolGroup,
+} from "@/lib/pool-board-data";
 import type { ActionResult } from "@/lib/action-result";
 
 function poolLetterName(index: number): string {
@@ -34,7 +41,7 @@ export async function generatePoolsAction(
   categoryId: string,
   mode: "auto" | "manual",
   poolCount?: number
-): Promise<ActionResult> {
+): Promise<ActionResult & { poolGroups?: DndPoolGroup[]; unassigned?: DndMember[] }> {
   if (poolCount !== undefined && (!Number.isInteger(poolCount) || poolCount < 1 || poolCount > 64)) {
     return { error: "Nombre de poules invalide." };
   }
@@ -83,7 +90,8 @@ export async function generatePoolsAction(
   revalidatePath(
     `/${orgSlug}/tournaments/${tournamentId}/categories/${categoryId}/pools`
   );
-  return { success: true };
+  const dnd = await loadPoolDndData(categoryId);
+  return { success: true, poolGroups: dnd.poolGroups, unassigned: dnd.unassigned };
 }
 
 export async function movePoolMemberAction(
@@ -134,7 +142,7 @@ export async function generatePoolMatchesAction(
   orgSlug: string,
   tournamentId: string,
   categoryId: string
-): Promise<ActionResult> {
+): Promise<ActionResult & { poolGroups?: BoardPoolGroup[] }> {
   const { organization } = await requireMembership(orgSlug, "ORGANIZER");
   const category = await loadCategoryForOrg(organization.id, tournamentId, categoryId);
   if (!category) return { error: "Catégorie introuvable." };
@@ -172,7 +180,8 @@ export async function generatePoolMatchesAction(
   revalidatePath(
     `/${orgSlug}/tournaments/${tournamentId}/categories/${categoryId}/pools`
   );
-  return { success: true };
+  const poolGroups = await loadPoolBoardData(categoryId);
+  return { success: true, poolGroups };
 }
 
 export async function resetPoolsAction(

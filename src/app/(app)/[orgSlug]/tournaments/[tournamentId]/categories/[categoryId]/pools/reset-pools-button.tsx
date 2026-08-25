@@ -9,10 +9,12 @@ export function ResetPoolsButton({
   orgSlug,
   tournamentId,
   categoryId,
+  onReset,
 }: {
   orgSlug: string;
   tournamentId: string;
   categoryId: string;
+  onReset: () => void;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -33,6 +35,7 @@ export function ResetPoolsButton({
         setError(res.error);
         return;
       }
+      onReset();
       router.refresh();
     });
   }
