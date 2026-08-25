@@ -92,7 +92,7 @@ export function TopNav({
   const category = categoryId ? navData?.categories.find((c) => c.id === categoryId) : undefined;
 
   return (
-    <div className="sticky top-0 z-20 flex items-center gap-1 overflow-x-auto border-b border-border bg-surface/95 px-3 py-2 backdrop-blur print:hidden">
+    <div className="sticky top-0 z-20 flex flex-wrap items-center gap-1 border-b border-border bg-surface/95 px-3 py-2 backdrop-blur print:hidden">
       <button
         onClick={() => router.back()}
         className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-navy-400 hover:bg-surface-muted hover:text-foreground"
