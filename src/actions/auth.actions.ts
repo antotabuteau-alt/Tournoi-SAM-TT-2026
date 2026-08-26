@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/password";
 import { registerSchema, loginSchema } from "@/lib/validators/auth.schema";
 import { isReservedOrgSlug, slugify } from "@/lib/org-slug";
-import { checkLoginRateLimit } from "@/lib/rate-limit";
+import { checkLoginRateLimit, checkRegisterRateLimit } from "@/lib/rate-limit";
 import type { ActionResult } from "@/lib/action-result";
 
 async function getClientIp(): Promise<string> {
@@ -28,6 +28,12 @@ export async function registerAction(
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Champs invalides" };
+  }
+
+  const ip = await getClientIp();
+  const { success: withinLimit } = await checkRegisterRateLimit(ip);
+  if (!withinLimit) {
+    return { error: "Trop de comptes créés récemment depuis cette adresse. Réessaie plus tard." };
   }
 
   const { name, email, password, organizationName } = parsed.data;

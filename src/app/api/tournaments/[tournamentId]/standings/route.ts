@@ -15,9 +15,14 @@ function roundLabel(roundsFromFinal: number): string {
   return ROUND_LABELS[roundsFromFinal] ?? `Tour ${roundsFromFinal + 1} avant la finale`;
 }
 
+// Neutralise l'injection de formule (un nom de joueur/club commençant par
+// =, +, -, @, tab ou CR serait interprété comme une formule par Excel/
+// LibreOffice à l'ouverture du fichier) en préfixant d'une apostrophe,
+// comme le recommande l'OWASP pour l'export CSV de données utilisateur.
 function csvEscape(value: string): string {
-  if (/[";\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
-  return value;
+  const safe = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+  if (/[";\n]/.test(safe)) return `"${safe.replace(/"/g, '""')}"`;
+  return safe;
 }
 
 export async function GET(

@@ -23,6 +23,7 @@ function makeLimiter(requests: number, window: `${number} ${"s" | "m" | "h"}`) {
 // limiting est simplement désactivé plutôt que de faire planter l'app —
 // à configurer avant la mise en production.
 const loginLimiter = makeLimiter(10, "1 m");
+const registerLimiter = makeLimiter(5, "1 h");
 const publicPollLimiter = makeLimiter(60, "1 m");
 const csvImportLimiter = makeLimiter(5, "1 m");
 
@@ -37,6 +38,10 @@ async function check(
 
 export function checkLoginRateLimit(identifier: string) {
   return check(loginLimiter, identifier);
+}
+
+export function checkRegisterRateLimit(identifier: string) {
+  return check(registerLimiter, identifier);
 }
 
 export function checkPublicPollRateLimit(identifier: string) {
