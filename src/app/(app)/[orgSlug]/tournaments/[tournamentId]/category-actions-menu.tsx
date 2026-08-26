@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { deleteCategoryAction } from "@/actions/category-settings.actions";
+import { deleteCategoryAction, duplicateCategoryAction } from "@/actions/category-settings.actions";
+import type { CreatedCategorySummary } from "@/actions/tournaments.actions";
 import { CategorySettingsPanel } from "./category-settings-panel";
 
 type BracketType = "CLASSIC" | "INTEGRAL_BY_LEVEL" | "INTEGRAL_OFFICIAL_FFTT" | "MAIN_PLUS_CONSOLATION";
@@ -23,6 +24,7 @@ export function CategoryActionsMenu({
   onDeleted,
   onScheduleUpdated,
   onNameUpdated,
+  onDuplicated,
 }: {
   orgSlug: string;
   tournamentId: string;
@@ -39,6 +41,7 @@ export function CategoryActionsMenu({
   onDeleted?: () => void;
   onScheduleUpdated?: (scheduledAt: Date) => void;
   onNameUpdated?: (name: string) => void;
+  onDuplicated?: (category: CreatedCategorySummary) => void;
 }) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -57,6 +60,19 @@ export function CategoryActionsMenu({
         return;
       }
       onDeleted?.();
+      router.refresh();
+    });
+  }
+
+  function handleDuplicate() {
+    setMenuOpen(false);
+    startTransition(async () => {
+      const res = await duplicateCategoryAction(orgSlug, tournamentId, categoryId);
+      if ("error" in res) {
+        alert(res.error);
+        return;
+      }
+      if (res.category) onDuplicated?.(res.category);
       router.refresh();
     });
   }
@@ -98,6 +114,12 @@ export function CategoryActionsMenu({
             >
               🖨 Classement poules PDF
             </a>
+            <button
+              onClick={handleDuplicate}
+              className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm hover:bg-surface-muted"
+            >
+              📋 Dupliquer le tableau
+            </button>
             <button
               onClick={handleDelete}
               className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-danger-600 hover:bg-danger-50"

@@ -86,7 +86,7 @@ export default async function PoolsPage({
         categoryId={categoryId}
         bestOfSets={category.bestOfSets}
         playerCount={category._count.registrations}
-        poolTargetSize={category.poolTargetSize ?? 4}
+        poolTargetSize={category.poolTargetSize ?? 3}
         canGenerateBracket={category.format !== "POOLS_ONLY" && !category.bracket}
         initialView={initialView}
       />

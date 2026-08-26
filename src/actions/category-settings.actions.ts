@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireMembership } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import type { ActionResult } from "@/lib/action-result";
+import type { CreatedCategorySummary } from "@/actions/tournaments.actions";
 
 async function loadCategoryForOrg(organizationId: string, tournamentId: string, categoryId: string) {
   return prisma.category.findFirst({
@@ -161,4 +162,48 @@ export async function deleteCategoryAction(
   await prisma.category.delete({ where: { id: categoryId } });
   revalidatePath(`/${orgSlug}/tournaments/${tournamentId}`);
   return { success: true };
+}
+
+export async function duplicateCategoryAction(
+  orgSlug: string,
+  tournamentId: string,
+  categoryId: string
+): Promise<ActionResult & { category?: CreatedCategorySummary }> {
+  const { organization } = await requireMembership(orgSlug, "ORGANIZER");
+  const category = await loadCategoryForOrg(organization.id, tournamentId, categoryId);
+  if (!category) return { error: "Tableau introuvable." };
+
+  const created = await prisma.category.create({
+    data: {
+      organizationId: organization.id,
+      tournamentId,
+      name: `${category.name} (copie)`,
+      format: category.format,
+      poolTargetSize: category.poolTargetSize,
+      poolQualifiersCount: category.poolQualifiersCount,
+      bestOfSets: category.bestOfSets,
+      scheduledAt: category.scheduledAt,
+      bracketType: category.bracketType,
+      repechage: category.repechage,
+      poolCount: category.poolCount,
+      tableRangeStart: category.tableRangeStart,
+      tableRangeEnd: category.tableRangeEnd,
+    },
+    select: {
+      id: true,
+      name: true,
+      format: true,
+      status: true,
+      scheduledAt: true,
+      bracketType: true,
+      poolQualifiersCount: true,
+      repechage: true,
+      poolCount: true,
+      tableRangeStart: true,
+      tableRangeEnd: true,
+    },
+  });
+
+  revalidatePath(`/${orgSlug}/tournaments/${tournamentId}`, "layout");
+  return { success: true, category: created };
 }

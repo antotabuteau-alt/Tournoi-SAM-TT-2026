@@ -99,7 +99,7 @@ export function CategoryForm({
 
         <Label>
           Taille de poule visée
-          <Input type="number" name="poolTargetSize" min={2} max={10} defaultValue={4} />
+          <Input type="number" name="poolTargetSize" min={2} max={10} defaultValue={3} />
         </Label>
 
         <Label>

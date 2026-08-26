@@ -59,7 +59,7 @@ export async function generatePoolsAction(
   const count =
     poolCount && poolCount > 0
       ? poolCount
-      : computePoolCount(category.registrations.length, category.poolTargetSize ?? 4);
+      : computePoolCount(category.registrations.length, category.poolTargetSize ?? 3);
 
   if (mode === "manual") {
     await prisma.poolGroup.createMany({

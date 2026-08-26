@@ -154,6 +154,7 @@ export function CategoryCardsList({
               onNameUpdated={(name) =>
                 setItems((prev) => prev.map((item) => (item.id === c.id ? { ...item, name } : item)))
               }
+              onDuplicated={handleCreated}
             />
           </div>
         </div>
