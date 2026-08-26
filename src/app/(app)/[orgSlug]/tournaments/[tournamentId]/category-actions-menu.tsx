@@ -21,6 +21,7 @@ export function CategoryActionsMenu({
   tableRangeEnd,
   registrationCount,
   onDeleted,
+  onScheduleUpdated,
 }: {
   orgSlug: string;
   tournamentId: string;
@@ -35,6 +36,7 @@ export function CategoryActionsMenu({
   tableRangeEnd: number | null;
   registrationCount: number;
   onDeleted?: () => void;
+  onScheduleUpdated?: (scheduledAt: Date) => void;
 }) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -118,6 +120,7 @@ export function CategoryActionsMenu({
           tableRangeEnd={tableRangeEnd}
           registrationCount={registrationCount}
           onClose={() => setSettingsOpen(false)}
+          onScheduleUpdated={onScheduleUpdated}
         />
       )}
     </div>

@@ -217,6 +217,9 @@ export function CategoryCardsList({
                     tableRangeEnd={c.tableRangeEnd}
                     registrationCount={c.registrationCount}
                     onDeleted={() => setItems((prev) => prev.filter((item) => item.id !== c.id))}
+                    onScheduleUpdated={(scheduledAt) =>
+                      setItems((prev) => prev.map((item) => (item.id === c.id ? { ...item, scheduledAt } : item)))
+                    }
                   />
                 </div>
               </div>

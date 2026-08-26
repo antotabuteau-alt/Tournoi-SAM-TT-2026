@@ -4,13 +4,14 @@ import { revalidatePath } from "next/cache";
 import { requireMembership } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { computeQualifiers, createBracketRounds } from "@/lib/bracket-service";
+import { loadBracketBoardData, type BracketBoardMatch } from "@/lib/bracket-board-data";
 import type { ActionResult } from "@/lib/action-result";
 
 export async function generateBracketAction(
   orgSlug: string,
   tournamentId: string,
   categoryId: string
-): Promise<ActionResult> {
+): Promise<ActionResult & { matches?: BracketBoardMatch[] }> {
   const { organization } = await requireMembership(orgSlug, "ORGANIZER");
 
   const category = await prisma.category.findFirst({
@@ -63,5 +64,6 @@ export async function generateBracketAction(
   revalidatePath(
     `/${orgSlug}/tournaments/${tournamentId}/categories/${categoryId}/bracket`
   );
-  return { success: true };
+  const matches = await loadBracketBoardData(categoryId);
+  return { success: true, matches };
 }

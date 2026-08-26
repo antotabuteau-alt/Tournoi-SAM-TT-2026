@@ -2,10 +2,7 @@ import { notFound } from "next/navigation";
 import { requireMembership } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { AddPlayerForm } from "./add-player-form";
-import { GenerateTestPlayersButton } from "./generate-test-players-button";
-import { PlayersList } from "./players-list";
-import { Card } from "@/components/ui/card";
-import { LinkButton } from "@/components/ui/link-button";
+import { PlayersPageClient } from "./players-page-client";
 import { TournamentToolbar } from "../tournament-toolbar";
 
 export default async function PlayersPage({
@@ -58,40 +55,12 @@ export default async function PlayersPage({
         publicSlug={tournament.publicSlug}
       />
       <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-5 px-6 py-8">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-semibold">📝 Inscriptions / Joueurs</h2>
-            <p className="text-sm text-navy-400">{players.length} joueur(s)</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <GenerateTestPlayersButton orgSlug={orgSlug} tournamentId={tournamentId} />
-            <LinkButton href={`/${orgSlug}/tournaments/${tournamentId}/players/import`} variant="outline">
-              📄 Importer un CSV
-            </LinkButton>
-            <LinkButton href={`/${orgSlug}/tournaments/${tournamentId}/players/badges/print`} variant="outline">
-              🏷️ Étiquettes
-            </LinkButton>
-            <a
-              href={`/api/tournaments/${tournamentId}/standings`}
-              className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-surface-muted"
-            >
-              📊 Classements (CSV)
-            </a>
-          </div>
-        </div>
-
-        <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
-          <Card className="p-4">
-            <PlayersList orgSlug={orgSlug} tournamentId={tournamentId} players={playerRows} />
-          </Card>
-
-          <Card className="p-4">
-            <h2 className="mb-3 text-sm font-semibold tracking-wide text-navy-400 uppercase">
-              Ajouter un joueur
-            </h2>
-            <AddPlayerForm orgSlug={orgSlug} tournamentId={tournamentId} />
-          </Card>
-        </div>
+        <PlayersPageClient
+          orgSlug={orgSlug}
+          tournamentId={tournamentId}
+          initialPlayers={playerRows}
+          addPlayerForm={<AddPlayerForm orgSlug={orgSlug} tournamentId={tournamentId} />}
+        />
       </div>
     </div>
   );

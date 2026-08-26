@@ -20,6 +20,7 @@ export interface BoardMatch {
   player2Name: string;
   status: string;
   refereeName: string | null;
+  tableNumber: number | null;
   sets: { player1Points: number; player2Points: number }[];
 }
 
@@ -121,6 +122,7 @@ export async function loadPoolBoardData(categoryId: string): Promise<BoardPoolGr
           : "?",
         status: m.status,
         refereeName: m.refereeName,
+        tableNumber: m.tableNumber,
         sets: m.sets.map((s) => ({ player1Points: s.player1Points, player2Points: s.player2Points })),
       })),
     };

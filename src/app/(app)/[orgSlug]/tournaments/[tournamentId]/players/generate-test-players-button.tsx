@@ -5,12 +5,21 @@ import { useRouter } from "next/navigation";
 import { generateTestPlayersAction } from "@/actions/players.actions";
 import { Button } from "@/components/ui/button";
 
+interface GeneratedTestPlayer {
+  id: string;
+  firstName: string;
+  lastName: string;
+  club: string | null;
+}
+
 export function GenerateTestPlayersButton({
   orgSlug,
   tournamentId,
+  onGenerated,
 }: {
   orgSlug: string;
   tournamentId: string;
+  onGenerated: (players: GeneratedTestPlayer[]) => void;
 }) {
   const router = useRouter();
   const [count, setCount] = useState(16);
@@ -27,7 +36,9 @@ export function GenerateTestPlayersButton({
         setError(res.error);
         return;
       }
-      setDone(res.created ?? count);
+      const created = res.created ?? [];
+      onGenerated(created);
+      setDone(created.length);
       router.refresh();
     });
   }

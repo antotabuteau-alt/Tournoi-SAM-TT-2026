@@ -71,6 +71,7 @@ export function CategorySettingsPanel({
   tableRangeEnd,
   registrationCount,
   onClose,
+  onScheduleUpdated,
 }: {
   orgSlug: string;
   tournamentId: string;
@@ -84,6 +85,7 @@ export function CategorySettingsPanel({
   tableRangeEnd: number | null;
   registrationCount: number;
   onClose: () => void;
+  onScheduleUpdated?: (scheduledAt: Date) => void;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -114,10 +116,11 @@ export function CategorySettingsPanel({
     return Math.min(16, Math.max(1, Math.ceil(count / 4)));
   }
 
-  function runAction(
+  function runAction<T extends { error: string } | { success: true }>(
     key: string,
-    action: (formData: FormData) => Promise<{ error: string } | { success: true }>,
-    formData: FormData
+    action: (formData: FormData) => Promise<T>,
+    formData: FormData,
+    onSuccess?: (result: T & { success: true }) => void
   ) {
     setErrors((e) => ({ ...e, [key]: "" }));
     setSaved((s) => ({ ...s, [key]: false }));
@@ -128,6 +131,7 @@ export function CategorySettingsPanel({
         return;
       }
       setSaved((s) => ({ ...s, [key]: true }));
+      onSuccess?.(res as T & { success: true });
       router.refresh();
     });
   }
@@ -152,7 +156,14 @@ export function CategorySettingsPanel({
         </div>
 
         <form
-          action={(fd) => runAction("schedule", (f) => updateCategoryScheduleAction(orgSlug, tournamentId, categoryId, f), fd)}
+          action={(fd) =>
+            runAction(
+              "schedule",
+              (f) => updateCategoryScheduleAction(orgSlug, tournamentId, categoryId, f),
+              fd,
+              (res) => res.scheduledAt && onScheduleUpdated?.(res.scheduledAt)
+            )
+          }
           className="mb-8 flex flex-col gap-3 border-b border-border pb-6"
         >
           <h3 className="text-sm font-semibold text-navy-700">📅 Date &amp; heure</h3>

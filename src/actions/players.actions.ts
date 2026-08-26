@@ -22,11 +22,18 @@ const TEST_LAST_NAMES = [
 ];
 const TEST_CLUBS = ["SAM Tennis de Table", "AS Bordeaux TT", "Pongiste Club Mérignac", "TT Talence", null];
 
+interface GeneratedTestPlayer {
+  id: string;
+  firstName: string;
+  lastName: string;
+  club: string | null;
+}
+
 export async function generateTestPlayersAction(
   orgSlug: string,
   tournamentId: string,
   count: number
-): Promise<ActionResult & { created?: number }> {
+): Promise<ActionResult & { created?: GeneratedTestPlayer[] }> {
   const { organization } = await requireMembership(orgSlug, "ORGANIZER");
 
   const tournament = await prisma.tournament.findFirst({
@@ -53,10 +60,13 @@ export async function generateTestPlayersAction(
     };
   });
 
-  await prisma.player.createMany({ data });
+  const created = await prisma.player.createManyAndReturn({
+    data,
+    select: { id: true, firstName: true, lastName: true, club: true },
+  });
 
   revalidatePath(`/${orgSlug}/tournaments/${tournamentId}/players`);
-  return { success: true, created: count };
+  return { success: true, created };
 }
 
 async function getClientIp(): Promise<string> {

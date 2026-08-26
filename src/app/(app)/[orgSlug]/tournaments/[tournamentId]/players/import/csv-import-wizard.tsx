@@ -46,11 +46,14 @@ export function CsvImportWizard({
         setRawRows(results.data);
 
         // Pré-remplissage automatique si les en-têtes correspondent déjà
+        // (insensible aux accents/casse pour tolérer les exports Excel sans accents, ex. "Prenom")
+        const DIACRITICS_RE = new RegExp("[̀-ͯ]", "g");
+        const normalize = (s: string) =>
+          s.trim().toLowerCase().normalize("NFD").replace(DIACRITICS_RE, "");
         const autoMapping: ColumnMapping = {};
         for (const field of PLAYER_CSV_FIELDS) {
           const match = cols.find(
-            (c) => c.trim().toLowerCase() === field.label.toLowerCase() ||
-              c.trim().toLowerCase() === field.key.toLowerCase()
+            (c) => normalize(c) === normalize(field.label) || normalize(c) === normalize(field.key)
           );
           if (match) autoMapping[field.key] = match;
         }

@@ -14,6 +14,7 @@ interface BracketMatchData {
   player2Name: string;
   status: string;
   refereeName: string | null;
+  tableNumber: number | null;
   sets: { player1Points: number; player2Points: number }[];
 }
 

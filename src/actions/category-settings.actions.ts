@@ -16,7 +16,7 @@ export async function updateCategoryScheduleAction(
   tournamentId: string,
   categoryId: string,
   formData: FormData
-): Promise<ActionResult> {
+): Promise<ActionResult & { scheduledAt?: Date }> {
   const { organization } = await requireMembership(orgSlug, "ORGANIZER");
   const category = await loadCategoryForOrg(organization.id, tournamentId, categoryId);
   if (!category) return { error: "Tableau introuvable." };
@@ -47,7 +47,7 @@ export async function updateCategoryScheduleAction(
 
   await prisma.category.update({ where: { id: categoryId }, data: { scheduledAt } });
   revalidatePath(`/${orgSlug}/tournaments/${tournamentId}`);
-  return { success: true };
+  return { success: true, scheduledAt };
 }
 
 export async function updateCategoryBracketTypeAction(

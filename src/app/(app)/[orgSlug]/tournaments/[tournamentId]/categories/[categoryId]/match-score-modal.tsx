@@ -7,6 +7,7 @@ import {
   submitBracketScoreAction,
   submitForfeitAction,
   setMatchRefereeAction,
+  setMatchTableAction,
 } from "@/actions/matches.actions";
 import { cn } from "@/lib/cn";
 import { Avatar } from "@/components/match-avatar";
@@ -18,6 +19,7 @@ export interface ModalMatchData {
   player1Name: string;
   player2Name: string;
   refereeName: string | null;
+  tableNumber: number | null;
   sets: { player1Points: number; player2Points: number }[];
 }
 
@@ -82,6 +84,7 @@ export function MatchScoreModal({
     nextEmptyCell(buildSetRows(match, maxSets))
   );
   const [referee, setReferee] = useState(match.refereeName ?? "");
+  const [table, setTable] = useState(match.tableNumber ? String(match.tableNumber) : "");
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -165,6 +168,14 @@ export function MatchScoreModal({
     });
   }
 
+  function handleTableBlur() {
+    const n = table.trim() === "" ? null : Number(table);
+    startTransition(async () => {
+      await setMatchTableAction(orgSlug, categoryId, match.id, n);
+      router.refresh();
+    });
+  }
+
   if (!match.player1Id || !match.player2Id) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy-950/50 p-4">
@@ -192,6 +203,18 @@ export function MatchScoreModal({
             </h2>
           </div>
           <div className="flex shrink-0 items-center gap-2">
+            <label className="flex items-center gap-1.5 text-xs text-navy-400">
+              🟢
+              <input
+                type="number"
+                min={1}
+                placeholder="Table"
+                value={table}
+                onChange={(e) => setTable(e.target.value)}
+                onBlur={handleTableBlur}
+                className="w-16 rounded-lg border border-border px-2 py-2 text-xs text-foreground"
+              />
+            </label>
             <label className="flex items-center gap-1.5 text-xs text-navy-400">
               🧑‍⚖️
               <input
