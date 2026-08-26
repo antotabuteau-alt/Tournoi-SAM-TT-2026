@@ -42,9 +42,29 @@ export default async function QrCodePage({
         >
           {publicUrl}
         </a>
-        <LinkButton href={`/t/${tournament.publicSlug}/tv`} target="_blank" variant="dark">
-          📺 Ouvrir le mode TV
-        </LinkButton>
+        <div className="flex flex-col items-center gap-1.5">
+          <LinkButton href={`/t/${tournament.publicSlug}/tv`} target="_blank" variant="dark">
+            📺 Ouvrir le mode TV
+          </LinkButton>
+          <div className="flex gap-3 text-xs">
+            <a
+              href={`/t/${tournament.publicSlug}/tv?day=SATURDAY`}
+              target="_blank"
+              rel="noreferrer"
+              className="text-navy-400 hover:text-brand-600 hover:underline"
+            >
+              🟠 Filtré Samedi
+            </a>
+            <a
+              href={`/t/${tournament.publicSlug}/tv?day=SUNDAY`}
+              target="_blank"
+              rel="noreferrer"
+              className="text-navy-400 hover:text-brand-600 hover:underline"
+            >
+              🔵 Filtré Dimanche
+            </a>
+          </div>
+        </div>
         <LinkButton href={`/t/${tournament.publicSlug}/appel`} target="_blank" variant="dark">
           📢 Ouvrir l&apos;écran d&apos;appel
         </LinkButton>

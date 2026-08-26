@@ -10,22 +10,14 @@ import { StageTracker } from "@/components/ui/stage-tracker";
 import { getCategoryStages } from "@/lib/category-stages";
 import { categoryCta } from "@/lib/category-cta";
 import { formatWallClockDateTime } from "@/lib/wall-clock";
+import { categoryDay, type CategoryDay } from "@/lib/category-day";
 import { cn } from "@/lib/cn";
 import { CategoryActionsMenu } from "./category-actions-menu";
 import { CategoryPlayersModal } from "./category-players-modal";
+import { CategoryForm } from "./category-form";
+import type { CreatedCategorySummary } from "@/actions/tournaments.actions";
 
-type DayFilter = "ALL" | "SATURDAY" | "SUNDAY" | "OTHER";
-
-// Jour de la semaine dérivé de scheduledAt en lisant les chiffres "muraux"
-// (getUTCDay), cohérent avec le reste de l'app qui ne fait jamais de vraie
-// conversion de fuseau horaire sur ces dates de tableau.
-function categoryDay(scheduledAt: Date | null): DayFilter {
-  if (!scheduledAt) return "OTHER";
-  const day = scheduledAt.getUTCDay();
-  if (day === 6) return "SATURDAY";
-  if (day === 0) return "SUNDAY";
-  return "OTHER";
-}
+type DayFilter = "ALL" | CategoryDay;
 
 const FORMAT_LABELS: Record<string, string> = {
   POOLS_THEN_BRACKET: "Poules + tableau final",
@@ -58,21 +50,34 @@ const TAB_META: Record<DayFilter, { label: string; barColor: string; dotColor: s
   OTHER: { label: "Sans date", barColor: "bg-navy-300", dotColor: "bg-navy-300" },
 };
 
+const DAY_ORDER: CategoryDay[] = ["SATURDAY", "SUNDAY", "OTHER"];
+
 export function CategoryCardsList({
   orgSlug,
   tournamentId,
+  tournamentDate,
   playerCount,
   categories,
 }: {
   orgSlug: string;
   tournamentId: string;
+  tournamentDate: Date;
   playerCount: number;
   categories: CategoryCardData[];
 }) {
   const [items, setItems] = useState(categories);
   const [tab, setTab] = useState<DayFilter>("ALL");
   const [playersModalCategoryId, setPlayersModalCategoryId] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
   const playersModalCategory = items.find((c) => c.id === playersModalCategoryId) ?? null;
+
+  function handleCreated(category: CreatedCategorySummary) {
+    setItems((prev) => [
+      ...prev,
+      { ...category, registrationCount: 0, registeredPlayers: [] },
+    ]);
+    setCreateOpen(false);
+  }
 
   // Resynchronise avec les données serveur fraîches (ex: après router.refresh()
   // suite à une sauvegarde de réglages) — sans ça, le state local figé au premier
@@ -98,6 +103,66 @@ export function CategoryCardsList({
   ];
   const visible = tab === "ALL" ? items : items.filter((c) => categoryDay(c.scheduledAt) === tab);
   const finishedVisible = visible.filter((c) => c.status === "FINISHED").length;
+  const nonEmptyDays = DAY_ORDER.filter((d) => counts[d] > 0);
+  const groupByDay = tab === "ALL" && nonEmptyDays.length > 1;
+
+  function renderCard(c: CategoryCardData) {
+    const cta = categoryCta(orgSlug, tournamentId, c.id, c.status, c.format, c.registrationCount);
+    return (
+      <Card key={c.id} className="flex flex-col p-4">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <h3 className="truncate font-semibold">{c.name}</h3>
+              <Badge variant={c.status === "FINISHED" ? "success" : "brand"}>
+                {FORMAT_LABELS[c.format]}
+              </Badge>
+            </div>
+            <p className="mt-0.5 text-xs text-navy-400">
+              {c.registrationCount} joueur(s)
+              {c.scheduledAt && <> · {formatWallClockDateTime(c.scheduledAt)}</>}
+            </p>
+          </div>
+          <CategoryActionsMenu
+            orgSlug={orgSlug}
+            tournamentId={tournamentId}
+            categoryId={c.id}
+            categoryName={c.name}
+            scheduledAt={c.scheduledAt}
+            bracketType={c.bracketType}
+            poolQualifiersCount={c.poolQualifiersCount}
+            repechage={c.repechage}
+            poolCount={c.poolCount}
+            tableRangeStart={c.tableRangeStart}
+            tableRangeEnd={c.tableRangeEnd}
+            registrationCount={c.registrationCount}
+            onDeleted={() => setItems((prev) => prev.filter((item) => item.id !== c.id))}
+            onScheduleUpdated={(scheduledAt) =>
+              setItems((prev) => prev.map((item) => (item.id === c.id ? { ...item, scheduledAt } : item)))
+            }
+            onNameUpdated={(name) =>
+              setItems((prev) => prev.map((item) => (item.id === c.id ? { ...item, name } : item)))
+            }
+          />
+        </div>
+
+        <div className="mt-4 flex flex-1 flex-col items-center justify-end gap-3 border-t border-border pt-4">
+          <StageTracker
+            stages={getCategoryStages(c.status, c.format, c.registrationCount, {
+              orgSlug,
+              tournamentId,
+              categoryId: c.id,
+            }).map((stage) =>
+              stage.label === "Joueurs"
+                ? { ...stage, href: undefined, onClick: () => setPlayersModalCategoryId(c.id) }
+                : stage
+            )}
+          />
+          <LinkButton href={cta.href} size="sm">{cta.label}</LinkButton>
+        </div>
+      </Card>
+    );
+  }
 
   if (items.length === 0) {
     return (
@@ -108,16 +173,33 @@ export function CategoryCardsList({
             <StatTile label="Tableaux" value={0} icon="🏓" accent="accent" />
             <StatTile label="Terminés" value={0} icon="✓" accent="success" />
           </div>
-          <Link
-            href={`/${orgSlug}/tournaments/${tournamentId}/players`}
-            className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-surface-muted"
-          >
-            📝 Joueurs du tournoi
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/${orgSlug}/tournaments/${tournamentId}/players`}
+              className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-surface-muted"
+            >
+              📝 Joueurs du tournoi
+            </Link>
+            <button
+              onClick={() => setCreateOpen(true)}
+              className="rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-600"
+            >
+              + Nouveau tableau
+            </button>
+          </div>
         </div>
         <Card className="px-6 py-10 text-center text-navy-400">
           Aucun tableau pour le moment.
         </Card>
+        {createOpen && (
+          <CreateCategoryModal
+            orgSlug={orgSlug}
+            tournamentId={tournamentId}
+            tournamentDate={tournamentDate}
+            onClose={() => setCreateOpen(false)}
+            onCreated={handleCreated}
+          />
+        )}
       </div>
     );
   }
@@ -169,77 +251,48 @@ export function CategoryCardsList({
           <StatTile label="Tableaux" value={visible.length} icon="🏓" accent="accent" />
           <StatTile label="Terminés" value={finishedVisible} icon="✓" accent="success" />
         </div>
-        <Link
-          href={`/${orgSlug}/tournaments/${tournamentId}/players`}
-          className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-surface-muted"
-        >
-          📝 Joueurs du tournoi
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/${orgSlug}/tournaments/${tournamentId}/players`}
+            className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-surface-muted"
+          >
+            📝 Joueurs du tournoi
+          </Link>
+          <button
+            onClick={() => setCreateOpen(true)}
+            className="rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-600"
+          >
+            + Nouveau tableau
+          </button>
+        </div>
       </div>
 
-      <div className="flex flex-col gap-3">
-        {visible.length === 0 && (
-          <Card className="px-6 py-10 text-center text-navy-400">
-            Aucun tableau dans cet onglet.
-          </Card>
-        )}
+      {visible.length === 0 && (
+        <Card className="px-6 py-10 text-center text-navy-400">
+          Aucun tableau dans cet onglet.
+        </Card>
+      )}
 
-        {visible.map((c) => {
-          const cta = categoryCta(orgSlug, tournamentId, c.id, c.status, c.format, c.registrationCount);
-          return (
-            <Card key={c.id} className="p-4">
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold">{c.name}</h3>
-                    <Badge variant={c.status === "FINISHED" ? "success" : "brand"}>
-                      {FORMAT_LABELS[c.format]}
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-navy-400">
-                    {c.registrationCount} joueur(s)
-                    {c.scheduledAt && <> · prévu le {formatWallClockDateTime(c.scheduledAt)}</>}
-                  </p>
-                </div>
-                <div className="flex items-center gap-1">
-                  <LinkButton href={cta.href} size="sm">{cta.label}</LinkButton>
-                  <CategoryActionsMenu
-                    orgSlug={orgSlug}
-                    tournamentId={tournamentId}
-                    categoryId={c.id}
-                    categoryName={c.name}
-                    scheduledAt={c.scheduledAt}
-                    bracketType={c.bracketType}
-                    poolQualifiersCount={c.poolQualifiersCount}
-                    repechage={c.repechage}
-                    poolCount={c.poolCount}
-                    tableRangeStart={c.tableRangeStart}
-                    tableRangeEnd={c.tableRangeEnd}
-                    registrationCount={c.registrationCount}
-                    onDeleted={() => setItems((prev) => prev.filter((item) => item.id !== c.id))}
-                    onScheduleUpdated={(scheduledAt) =>
-                      setItems((prev) => prev.map((item) => (item.id === c.id ? { ...item, scheduledAt } : item)))
-                    }
-                  />
-                </div>
+      {groupByDay ? (
+        <div className="flex flex-col gap-6">
+          {DAY_ORDER.filter((d) => counts[d] > 0).map((d) => (
+            <section key={d} className="flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <span className={cn("h-2.5 w-2.5 rounded-full", TAB_META[d].dotColor)} />
+                <h3 className="text-sm font-bold tracking-wide text-navy-600 uppercase">
+                  {TAB_META[d].label}
+                </h3>
+                <span className="text-xs text-navy-400">({counts[d]})</span>
               </div>
-              <div className="mt-4">
-                <StageTracker
-                  stages={getCategoryStages(c.status, c.format, c.registrationCount, {
-                    orgSlug,
-                    tournamentId,
-                    categoryId: c.id,
-                  }).map((stage) =>
-                    stage.label === "Joueurs"
-                      ? { ...stage, href: undefined, onClick: () => setPlayersModalCategoryId(c.id) }
-                      : stage
-                  )}
-                />
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {items.filter((c) => categoryDay(c.scheduledAt) === d).map(renderCard)}
               </div>
-            </Card>
-          );
-        })}
-      </div>
+            </section>
+          ))}
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{visible.map(renderCard)}</div>
+      )}
 
       {playersModalCategory && (
         <CategoryPlayersModal
@@ -251,6 +304,54 @@ export function CategoryCardsList({
           onClose={() => setPlayersModalCategoryId(null)}
         />
       )}
+
+      {createOpen && (
+        <CreateCategoryModal
+          orgSlug={orgSlug}
+          tournamentId={tournamentId}
+          tournamentDate={tournamentDate}
+          onClose={() => setCreateOpen(false)}
+          onCreated={handleCreated}
+        />
+      )}
+    </div>
+  );
+}
+
+function CreateCategoryModal({
+  orgSlug,
+  tournamentId,
+  tournamentDate,
+  onClose,
+  onCreated,
+}: {
+  orgSlug: string;
+  tournamentId: string;
+  tournamentDate: Date;
+  onClose: () => void;
+  onCreated: (category: CreatedCategorySummary) => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy-950/40 p-4">
+      <button aria-label="Fermer" className="absolute inset-0" onClick={onClose} />
+      <div className="relative flex w-full max-w-lg flex-col gap-5 rounded-2xl bg-surface p-6 shadow-2xl">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold">+ Nouveau tableau</h2>
+          <button
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-navy-400 hover:bg-surface-muted"
+            aria-label="Fermer"
+          >
+            ✕
+          </button>
+        </div>
+        <CategoryForm
+          orgSlug={orgSlug}
+          tournamentId={tournamentId}
+          tournamentDate={tournamentDate}
+          onCreated={onCreated}
+        />
+      </div>
     </div>
   );
 }

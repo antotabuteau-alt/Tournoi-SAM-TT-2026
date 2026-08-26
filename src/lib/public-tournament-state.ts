@@ -46,6 +46,7 @@ export interface PublicCategory {
   name: string;
   format: string;
   status: string;
+  scheduledAt: string | null;
   pools: PublicPool[];
   bracketRounds: { round: number; matches: PublicMatch[] }[] | null;
 }
@@ -141,6 +142,7 @@ export async function getPublicTournamentState(
       name: category.name,
       format: category.format,
       status: category.status,
+      scheduledAt: category.scheduledAt ? category.scheduledAt.toISOString() : null,
       pools: category.poolGroups.map((group) => {
         const registrationIds = group.members.map((m) => m.registrationId);
         const initialSeedOrder = [...group.members]

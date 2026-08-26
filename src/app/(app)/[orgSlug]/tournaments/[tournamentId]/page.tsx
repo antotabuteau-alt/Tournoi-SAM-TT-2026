@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { requireMembership } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
-import { CategoryForm } from "./category-form";
 import { TournamentToolbar } from "./tournament-toolbar";
 import { CategoryCardsList } from "./category-cards-list";
 
@@ -40,11 +39,12 @@ export default async function TournamentPage({
         publicSlug={tournament.publicSlug}
       />
 
-      <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-6 py-8">
+      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-6 py-8">
         <section className="flex flex-col gap-3">
           <CategoryCardsList
             orgSlug={orgSlug}
             tournamentId={tournamentId}
+            tournamentDate={tournament.date}
             playerCount={tournament._count.players}
             categories={tournament.categories.map((c) => ({
               id: c.id,
@@ -67,15 +67,6 @@ export default async function TournamentPage({
               })),
             }))}
           />
-
-          <details className="group rounded-2xl border border-dashed border-border bg-surface-muted p-4">
-            <summary className="cursor-pointer font-medium text-brand-600">
-              + Ajouter un tableau
-            </summary>
-            <div className="mt-4">
-              <CategoryForm orgSlug={orgSlug} tournamentId={tournamentId} />
-            </div>
-          </details>
         </section>
       </div>
     </div>

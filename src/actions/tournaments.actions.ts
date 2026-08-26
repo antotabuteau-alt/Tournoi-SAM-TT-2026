@@ -9,6 +9,7 @@ import {
   createCategorySchema,
   createTournamentSchema,
 } from "@/lib/validators/tournament.schema";
+import { weekendDatesOf } from "@/lib/category-day";
 import type { ActionResult } from "@/lib/action-result";
 
 export async function createTournamentAction(
@@ -41,12 +42,26 @@ export async function createTournamentAction(
   redirect(`/${orgSlug}/tournaments/${tournament.id}`);
 }
 
+export interface CreatedCategorySummary {
+  id: string;
+  name: string;
+  format: string;
+  status: string;
+  scheduledAt: Date | null;
+  bracketType: "CLASSIC" | "INTEGRAL_BY_LEVEL" | "INTEGRAL_OFFICIAL_FFTT" | "MAIN_PLUS_CONSOLATION";
+  poolQualifiersCount: number;
+  repechage: boolean;
+  poolCount: number | null;
+  tableRangeStart: number | null;
+  tableRangeEnd: number | null;
+}
+
 export async function createCategoryAction(
   orgSlug: string,
   tournamentId: string,
-  _prev: ActionResult | null,
+  _prev: (ActionResult & { category?: CreatedCategorySummary }) | null,
   formData: FormData
-): Promise<ActionResult> {
+): Promise<ActionResult & { category?: CreatedCategorySummary }> {
   const { organization } = await requireMembership(orgSlug, "ORGANIZER");
 
   const tournament = await prisma.tournament.findFirst({
@@ -60,12 +75,20 @@ export async function createCategoryAction(
     poolTargetSize: formData.get("poolTargetSize") || undefined,
     poolQualifiersCount: formData.get("poolQualifiersCount") || undefined,
     bestOfSets: formData.get("bestOfSets"),
+    day: formData.get("day") || undefined,
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Champs invalides" };
   }
 
-  await prisma.category.create({
+  let scheduledAt: Date | null = null;
+  if (parsed.data.day !== "NONE") {
+    const { saturday, sunday } = weekendDatesOf(tournament.date);
+    const day = parsed.data.day === "SATURDAY" ? saturday : sunday;
+    scheduledAt = new Date(day.getTime() + 8 * 60 * 60 * 1000); // 08h00 par défaut, ajustable ensuite
+  }
+
+  const category = await prisma.category.create({
     data: {
       organizationId: organization.id,
       tournamentId: tournament.id,
@@ -74,9 +97,23 @@ export async function createCategoryAction(
       poolTargetSize: parsed.data.poolTargetSize,
       poolQualifiersCount: parsed.data.poolQualifiersCount,
       bestOfSets: parsed.data.bestOfSets,
+      scheduledAt,
+    },
+    select: {
+      id: true,
+      name: true,
+      format: true,
+      status: true,
+      scheduledAt: true,
+      bracketType: true,
+      poolQualifiersCount: true,
+      repechage: true,
+      poolCount: true,
+      tableRangeStart: true,
+      tableRangeEnd: true,
     },
   });
 
   revalidatePath(`/${orgSlug}/tournaments/${tournamentId}`, "layout");
-  redirect(`/${orgSlug}/tournaments/${tournamentId}`);
+  return { success: true, category };
 }

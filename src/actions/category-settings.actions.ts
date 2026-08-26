@@ -50,6 +50,29 @@ export async function updateCategoryScheduleAction(
   return { success: true, scheduledAt };
 }
 
+export async function updateCategoryNameAction(
+  orgSlug: string,
+  tournamentId: string,
+  categoryId: string,
+  formData: FormData
+): Promise<ActionResult & { name?: string }> {
+  const { organization } = await requireMembership(orgSlug, "ORGANIZER");
+  const category = await loadCategoryForOrg(organization.id, tournamentId, categoryId);
+  if (!category) return { error: "Tableau introuvable." };
+
+  const name = formData.get("name");
+  if (typeof name !== "string" || name.trim().length < 2) {
+    return { error: "Le nom doit contenir au moins 2 caractères." };
+  }
+  if (name.trim().length > 100) {
+    return { error: "Le nom est trop long (100 caractères maximum)." };
+  }
+
+  await prisma.category.update({ where: { id: categoryId }, data: { name: name.trim() } });
+  revalidatePath(`/${orgSlug}/tournaments/${tournamentId}`);
+  return { success: true, name: name.trim() };
+}
+
 export async function updateCategoryBracketTypeAction(
   orgSlug: string,
   tournamentId: string,

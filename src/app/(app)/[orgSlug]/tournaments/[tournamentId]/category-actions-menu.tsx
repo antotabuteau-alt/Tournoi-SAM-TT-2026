@@ -22,6 +22,7 @@ export function CategoryActionsMenu({
   registrationCount,
   onDeleted,
   onScheduleUpdated,
+  onNameUpdated,
 }: {
   orgSlug: string;
   tournamentId: string;
@@ -37,6 +38,7 @@ export function CategoryActionsMenu({
   registrationCount: number;
   onDeleted?: () => void;
   onScheduleUpdated?: (scheduledAt: Date) => void;
+  onNameUpdated?: (name: string) => void;
 }) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -111,6 +113,7 @@ export function CategoryActionsMenu({
           orgSlug={orgSlug}
           tournamentId={tournamentId}
           categoryId={categoryId}
+          categoryName={categoryName}
           scheduledAt={scheduledAt}
           bracketType={bracketType}
           poolQualifiersCount={poolQualifiersCount}
@@ -121,6 +124,7 @@ export function CategoryActionsMenu({
           registrationCount={registrationCount}
           onClose={() => setSettingsOpen(false)}
           onScheduleUpdated={onScheduleUpdated}
+          onNameUpdated={onNameUpdated}
         />
       )}
     </div>

@@ -16,4 +16,5 @@ export const createCategorySchema = z.object({
   bestOfSets: z.coerce.number().int().refine((n) => n === 3 || n === 4, {
     message: "3 ou 4 manches gagnantes",
   }),
+  day: z.enum(["SATURDAY", "SUNDAY", "NONE"]).default("NONE"),
 });

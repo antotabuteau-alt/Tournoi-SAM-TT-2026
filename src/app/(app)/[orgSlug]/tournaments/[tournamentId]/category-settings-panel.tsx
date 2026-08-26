@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
+  updateCategoryNameAction,
   updateCategoryScheduleAction,
   updateCategoryBracketTypeAction,
   updateCategoryPoolRulesAction,
@@ -62,6 +63,7 @@ export function CategorySettingsPanel({
   orgSlug,
   tournamentId,
   categoryId,
+  categoryName,
   scheduledAt,
   bracketType,
   poolQualifiersCount,
@@ -72,10 +74,12 @@ export function CategorySettingsPanel({
   registrationCount,
   onClose,
   onScheduleUpdated,
+  onNameUpdated,
 }: {
   orgSlug: string;
   tournamentId: string;
   categoryId: string;
+  categoryName: string;
   scheduledAt: Date | null;
   bracketType: BracketType;
   poolQualifiersCount: number;
@@ -86,6 +90,7 @@ export function CategorySettingsPanel({
   registrationCount: number;
   onClose: () => void;
   onScheduleUpdated?: (scheduledAt: Date) => void;
+  onNameUpdated?: (name: string) => void;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -99,6 +104,7 @@ export function CategorySettingsPanel({
     return () => clearTimeout(t);
   }, [saved]);
 
+  const [name, setName] = useState(categoryName);
   const [date, setDate] = useState(toDateInputValue(scheduledAt));
   const [time, setTime] = useState(toTimeInputValue(scheduledAt));
   const [type, setType] = useState<BracketType>(bracketType);
@@ -154,6 +160,38 @@ export function CategorySettingsPanel({
             ✕
           </button>
         </div>
+
+        <form
+          action={(fd) =>
+            runAction(
+              "name",
+              (f) => updateCategoryNameAction(orgSlug, tournamentId, categoryId, f),
+              fd,
+              (res) => res.name && onNameUpdated?.(res.name)
+            )
+          }
+          className="mb-8 flex flex-col gap-3 border-b border-border pb-6"
+        >
+          <h3 className="text-sm font-semibold text-navy-700">✏️ Nom du tableau</h3>
+          <input
+            type="text"
+            name="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            minLength={2}
+            maxLength={100}
+            required
+            className="rounded-lg border border-border px-3 py-2 text-sm"
+          />
+          {errors.name && <p className="text-xs text-danger-600">{errors.name}</p>}
+          <button
+            type="submit"
+            disabled={isPending}
+            className="self-start rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50"
+          >
+            {saved.name ? "✓ Enregistré" : "💾 Renommer"}
+          </button>
+        </form>
 
         <form
           action={(fd) =>
