@@ -107,7 +107,7 @@ export function CategoryCardsList({
     return (
       <Card key={c.id} className="p-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <h3 className="font-semibold">{c.name}</h3>
               <Badge variant={c.status === "FINISHED" ? "success" : "brand"}>
@@ -118,6 +118,19 @@ export function CategoryCardsList({
               {c.registrationCount} joueur(s)
               {c.scheduledAt && <> · prévu le {formatWallClockDateTime(c.scheduledAt)}</>}
             </p>
+            <div className="mt-3">
+              <StageTracker
+                stages={getCategoryStages(c.status, c.format, c.registrationCount, {
+                  orgSlug,
+                  tournamentId,
+                  categoryId: c.id,
+                }).map((stage) =>
+                  stage.label === "Joueurs"
+                    ? { ...stage, href: undefined, onClick: () => setPlayersModalCategoryId(c.id) }
+                    : stage
+                )}
+              />
+            </div>
           </div>
           <div className="flex items-center gap-1">
             <LinkButton href={cta.href} size="sm">{cta.label}</LinkButton>
@@ -143,19 +156,6 @@ export function CategoryCardsList({
               }
             />
           </div>
-        </div>
-        <div className="mt-4">
-          <StageTracker
-            stages={getCategoryStages(c.status, c.format, c.registrationCount, {
-              orgSlug,
-              tournamentId,
-              categoryId: c.id,
-            }).map((stage) =>
-              stage.label === "Joueurs"
-                ? { ...stage, href: undefined, onClick: () => setPlayersModalCategoryId(c.id) }
-                : stage
-            )}
-          />
         </div>
       </Card>
     );
@@ -203,8 +203,8 @@ export function CategoryCardsList({
 
   return (
     <div className="flex flex-col gap-6">
-      <Card className="overflow-hidden p-0">
-        <div className="flex divide-x divide-border">
+      <Card className="flex flex-wrap items-center justify-between gap-4 p-3">
+        <div className="flex flex-wrap items-center gap-2">
           {tabs.map((key) => {
             const meta = TAB_META[key];
             const active = tab === key;
@@ -213,56 +213,48 @@ export function CategoryCardsList({
                 key={key}
                 onClick={() => setTab(key)}
                 className={cn(
-                  "relative flex flex-1 flex-col items-center gap-1 px-4 py-5 transition-colors",
-                  active ? "bg-surface-muted" : "hover:bg-surface-muted/60"
+                  "flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-semibold transition-colors",
+                  active ? "bg-navy-950 text-white" : "text-navy-500 hover:bg-surface-muted"
                 )}
               >
-                <span
-                  className={cn(
-                    "flex items-center gap-2 text-base font-bold",
-                    active ? "text-foreground" : "text-navy-400"
-                  )}
-                >
-                  {key !== "ALL" && <span className={cn("h-2 w-2 rounded-full", meta.dotColor)} />}
-                  {meta.label}
+                {key !== "ALL" && <span className={cn("h-2 w-2 rounded-full", meta.dotColor)} />}
+                {meta.label}
+                <span className={cn("text-xs font-medium", active ? "text-navy-300" : "text-navy-400")}>
+                  {counts[key]}
                 </span>
-                <span className="text-xs text-navy-400">
-                  {counts[key]} tableau{counts[key] !== 1 ? "x" : ""}
-                </span>
-                <span
-                  className={cn(
-                    "absolute inset-x-0 bottom-0 h-[3px] transition-opacity",
-                    meta.barColor,
-                    active ? "opacity-100" : "opacity-0"
-                  )}
-                />
               </button>
             );
           })}
         </div>
-      </Card>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex gap-3">
-          <StatTile label="Joueurs" value={playerCount} icon="👥" accent="brand" />
-          <StatTile label="Tableaux" value={visible.length} icon="🏓" accent="accent" />
-          <StatTile label="Terminés" value={finishedVisible} icon="✓" accent="success" />
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-4 border-l border-border pl-4 text-sm">
+            <span className="flex items-center gap-1.5 font-medium text-navy-600">
+              👥 <b className="text-foreground">{playerCount}</b>
+            </span>
+            <span className="flex items-center gap-1.5 font-medium text-navy-600">
+              🏓 <b className="text-foreground">{visible.length}</b>
+            </span>
+            <span className="flex items-center gap-1.5 font-medium text-navy-600">
+              ✓ <b className="text-foreground">{finishedVisible}</b>
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/${orgSlug}/tournaments/${tournamentId}/players`}
+              className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-surface-muted"
+            >
+              📝 Joueurs du tournoi
+            </Link>
+            <button
+              onClick={() => setCreateOpen(true)}
+              className="rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-600"
+            >
+              + Nouveau tableau
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Link
-            href={`/${orgSlug}/tournaments/${tournamentId}/players`}
-            className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-surface-muted"
-          >
-            📝 Joueurs du tournoi
-          </Link>
-          <button
-            onClick={() => setCreateOpen(true)}
-            className="rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-600"
-          >
-            + Nouveau tableau
-          </button>
-        </div>
-      </div>
+      </Card>
 
       <div className="flex flex-col gap-3">
         {visible.length === 0 && (
