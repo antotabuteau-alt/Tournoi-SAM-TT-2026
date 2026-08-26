@@ -45,6 +45,9 @@ export default async function QrCodePage({
         <LinkButton href={`/t/${tournament.publicSlug}/tv`} target="_blank" variant="dark">
           📺 Ouvrir le mode TV
         </LinkButton>
+        <LinkButton href={`/t/${tournament.publicSlug}/appel`} target="_blank" variant="dark">
+          📢 Ouvrir l&apos;écran d&apos;appel
+        </LinkButton>
       </div>
     </div>
   );

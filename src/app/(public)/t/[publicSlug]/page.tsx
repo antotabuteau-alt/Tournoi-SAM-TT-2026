@@ -31,6 +31,9 @@ export default async function PublicTournamentPage({
         <LinkButton href={`/t/${publicSlug}/tv`} variant="dark">
           📺 Mode TV
         </LinkButton>
+        <LinkButton href={`/t/${publicSlug}/appel`} variant="dark">
+          📢 Écran d&apos;appel
+        </LinkButton>
       </div>
 
       <div className="flex flex-col gap-2">

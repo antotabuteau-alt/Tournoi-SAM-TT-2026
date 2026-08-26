@@ -14,6 +14,17 @@ export interface PublicMatch {
   sets: PublicSetScore[];
   round?: number | null;
   position?: number | null;
+  tableNumber?: number | null;
+  updatedAt?: string;
+}
+
+export interface PublicCall {
+  matchId: string;
+  categoryName: string;
+  tableNumber: number;
+  player1Name: string;
+  player2Name: string;
+  calledAt: string;
 }
 
 export interface PublicPoolRankingRow {
@@ -45,6 +56,7 @@ export interface PublicTournamentState {
   location: string | null;
   status: string;
   categories: PublicCategory[];
+  calls: PublicCall[];
 }
 
 function playerName(
@@ -95,11 +107,35 @@ export async function getPublicTournamentState(
   });
   if (!tournament) return null;
 
+  const calls: PublicCall[] = [];
+  for (const category of tournament.categories) {
+    const allMatches = [
+      ...category.poolGroups.flatMap((g) => g.matches),
+      ...(category.bracket?.matches ?? []),
+    ];
+    for (const m of allMatches) {
+      if (m.tableNumber == null || m.status !== "SCHEDULED") continue;
+      const p1 = playerName(m.player1);
+      const p2 = playerName(m.player2);
+      if (!p1 || !p2) continue;
+      calls.push({
+        matchId: m.id,
+        categoryName: category.name,
+        tableNumber: m.tableNumber,
+        player1Name: p1,
+        player2Name: p2,
+        calledAt: m.updatedAt.toISOString(),
+      });
+    }
+  }
+  calls.sort((a, b) => b.calledAt.localeCompare(a.calledAt));
+
   return {
     name: tournament.name,
     date: tournament.date.toISOString(),
     location: tournament.location,
     status: tournament.status,
+    calls,
     categories: tournament.categories.map((category) => ({
       id: category.id,
       name: category.name,
@@ -135,6 +171,8 @@ export async function getPublicTournamentState(
             player1Name: playerName(m.player1),
             player2Name: playerName(m.player2),
             status: m.status,
+            tableNumber: m.tableNumber,
+            updatedAt: m.updatedAt.toISOString(),
             sets: m.sets.map((s) => ({
               player1Points: s.player1Points,
               player2Points: s.player2Points,
@@ -154,6 +192,8 @@ export async function getPublicTournamentState(
               status: m.status,
               round: m.round,
               position: m.position,
+              tableNumber: m.tableNumber,
+              updatedAt: m.updatedAt.toISOString(),
               sets: m.sets.map((s) => ({
                 player1Points: s.player1Points,
                 player2Points: s.player2Points,
