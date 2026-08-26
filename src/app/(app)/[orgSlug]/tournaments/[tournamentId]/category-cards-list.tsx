@@ -50,8 +50,6 @@ const TAB_META: Record<DayFilter, { label: string; barColor: string; dotColor: s
   OTHER: { label: "Sans date", barColor: "bg-navy-300", dotColor: "bg-navy-300" },
 };
 
-const DAY_ORDER: CategoryDay[] = ["SATURDAY", "SUNDAY", "OTHER"];
-
 export function CategoryCardsList({
   orgSlug,
   tournamentId,
@@ -103,50 +101,50 @@ export function CategoryCardsList({
   ];
   const visible = tab === "ALL" ? items : items.filter((c) => categoryDay(c.scheduledAt) === tab);
   const finishedVisible = visible.filter((c) => c.status === "FINISHED").length;
-  const nonEmptyDays = DAY_ORDER.filter((d) => counts[d] > 0);
-  const groupByDay = tab === "ALL" && nonEmptyDays.length > 1;
 
   function renderCard(c: CategoryCardData) {
     const cta = categoryCta(orgSlug, tournamentId, c.id, c.status, c.format, c.registrationCount);
     return (
-      <Card key={c.id} className="flex flex-col p-4">
-        <div className="flex items-start justify-between gap-2">
+      <Card key={c.id} className="p-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <h3 className="truncate font-semibold">{c.name}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold">{c.name}</h3>
               <Badge variant={c.status === "FINISHED" ? "success" : "brand"}>
                 {FORMAT_LABELS[c.format]}
               </Badge>
             </div>
-            <p className="mt-0.5 text-xs text-navy-400">
+            <p className="text-xs text-navy-400">
               {c.registrationCount} joueur(s)
-              {c.scheduledAt && <> · {formatWallClockDateTime(c.scheduledAt)}</>}
+              {c.scheduledAt && <> · prévu le {formatWallClockDateTime(c.scheduledAt)}</>}
             </p>
           </div>
-          <CategoryActionsMenu
-            orgSlug={orgSlug}
-            tournamentId={tournamentId}
-            categoryId={c.id}
-            categoryName={c.name}
-            scheduledAt={c.scheduledAt}
-            bracketType={c.bracketType}
-            poolQualifiersCount={c.poolQualifiersCount}
-            repechage={c.repechage}
-            poolCount={c.poolCount}
-            tableRangeStart={c.tableRangeStart}
-            tableRangeEnd={c.tableRangeEnd}
-            registrationCount={c.registrationCount}
-            onDeleted={() => setItems((prev) => prev.filter((item) => item.id !== c.id))}
-            onScheduleUpdated={(scheduledAt) =>
-              setItems((prev) => prev.map((item) => (item.id === c.id ? { ...item, scheduledAt } : item)))
-            }
-            onNameUpdated={(name) =>
-              setItems((prev) => prev.map((item) => (item.id === c.id ? { ...item, name } : item)))
-            }
-          />
+          <div className="flex items-center gap-1">
+            <LinkButton href={cta.href} size="sm">{cta.label}</LinkButton>
+            <CategoryActionsMenu
+              orgSlug={orgSlug}
+              tournamentId={tournamentId}
+              categoryId={c.id}
+              categoryName={c.name}
+              scheduledAt={c.scheduledAt}
+              bracketType={c.bracketType}
+              poolQualifiersCount={c.poolQualifiersCount}
+              repechage={c.repechage}
+              poolCount={c.poolCount}
+              tableRangeStart={c.tableRangeStart}
+              tableRangeEnd={c.tableRangeEnd}
+              registrationCount={c.registrationCount}
+              onDeleted={() => setItems((prev) => prev.filter((item) => item.id !== c.id))}
+              onScheduleUpdated={(scheduledAt) =>
+                setItems((prev) => prev.map((item) => (item.id === c.id ? { ...item, scheduledAt } : item)))
+              }
+              onNameUpdated={(name) =>
+                setItems((prev) => prev.map((item) => (item.id === c.id ? { ...item, name } : item)))
+              }
+            />
+          </div>
         </div>
-
-        <div className="mt-4 flex flex-1 flex-col items-center justify-end gap-3 border-t border-border pt-4">
+        <div className="mt-4">
           <StageTracker
             stages={getCategoryStages(c.status, c.format, c.registrationCount, {
               orgSlug,
@@ -158,7 +156,6 @@ export function CategoryCardsList({
                 : stage
             )}
           />
-          <LinkButton href={cta.href} size="sm">{cta.label}</LinkButton>
         </div>
       </Card>
     );
@@ -267,32 +264,14 @@ export function CategoryCardsList({
         </div>
       </div>
 
-      {visible.length === 0 && (
-        <Card className="px-6 py-10 text-center text-navy-400">
-          Aucun tableau dans cet onglet.
-        </Card>
-      )}
-
-      {groupByDay ? (
-        <div className="flex flex-col gap-6">
-          {DAY_ORDER.filter((d) => counts[d] > 0).map((d) => (
-            <section key={d} className="flex flex-col gap-3">
-              <div className="flex items-center gap-2">
-                <span className={cn("h-2.5 w-2.5 rounded-full", TAB_META[d].dotColor)} />
-                <h3 className="text-sm font-bold tracking-wide text-navy-600 uppercase">
-                  {TAB_META[d].label}
-                </h3>
-                <span className="text-xs text-navy-400">({counts[d]})</span>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {items.filter((c) => categoryDay(c.scheduledAt) === d).map(renderCard)}
-              </div>
-            </section>
-          ))}
-        </div>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{visible.map(renderCard)}</div>
-      )}
+      <div className="flex flex-col gap-3">
+        {visible.length === 0 && (
+          <Card className="px-6 py-10 text-center text-navy-400">
+            Aucun tableau dans cet onglet.
+          </Card>
+        )}
+        {visible.map(renderCard)}
+      </div>
 
       {playersModalCategory && (
         <CategoryPlayersModal
