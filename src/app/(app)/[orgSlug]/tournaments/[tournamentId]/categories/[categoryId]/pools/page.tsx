@@ -20,8 +20,10 @@ export default async function PoolsPage({
       where: { id: categoryId, organizationId: organization.id, tournamentId },
       select: {
         name: true,
+        format: true,
         bestOfSets: true,
         poolTargetSize: true,
+        bracket: { select: { id: true } },
         _count: { select: { registrations: true } },
         poolGroups: { select: { id: true, matches: { select: { id: true } } } },
       },
@@ -85,6 +87,7 @@ export default async function PoolsPage({
         bestOfSets={category.bestOfSets}
         playerCount={category._count.registrations}
         poolTargetSize={category.poolTargetSize ?? 4}
+        canGenerateBracket={category.format !== "POOLS_ONLY" && !category.bracket}
         initialView={initialView}
       />
     </div>

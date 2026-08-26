@@ -64,7 +64,7 @@ export function BracketBoard({
   ).sort(([a], [b]) => Number(a) - Number(b));
 
   return (
-    <div className="flex gap-6 overflow-x-auto pb-4">
+    <div className="flex justify-center gap-6 overflow-x-auto pb-4">
       {rounds.map(([round, roundMatches]) => (
         <div key={round} className="flex w-72 shrink-0 flex-col gap-3">
           <h2 className="text-xs font-semibold tracking-wide text-navy-400 uppercase">

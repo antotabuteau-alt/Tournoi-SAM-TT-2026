@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/cn";
@@ -40,33 +41,43 @@ function DropdownCrumb({
   items: { id: string; name: string; href: string }[];
   activeId?: string;
 }) {
+  const [open, setOpen] = useState(false);
+
   if (items.length <= 1) {
     return <span className="max-w-[14rem] truncate text-sm font-semibold text-foreground">{label}</span>;
   }
+
   return (
-    <details className="group relative">
-      <summary className="flex cursor-pointer list-none items-center gap-1 rounded-lg px-1.5 py-1 text-sm font-semibold text-foreground marker:content-none hover:bg-surface-muted">
+    <div className="relative" onMouseLeave={() => setOpen(false)}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex cursor-pointer items-center gap-1 rounded-lg px-1.5 py-1 text-sm font-semibold text-foreground hover:bg-surface-muted"
+      >
         <span className="max-w-[14rem] truncate">{label}</span>
-        <span className="text-[10px] text-navy-400 transition-transform group-open:rotate-180">▾</span>
-      </summary>
-      <ul className="absolute left-0 top-full z-30 mt-1 max-h-72 w-64 overflow-y-auto rounded-xl border border-border bg-surface p-1.5 shadow-lg shadow-navy-950/10">
-        {items.map((item) => (
-          <li key={item.id}>
-            <Link
-              href={item.href}
-              className={cn(
-                "block truncate rounded-lg px-3 py-1.5 text-sm",
-                item.id === activeId
-                  ? "bg-brand-50 font-semibold text-brand-700"
-                  : "text-foreground hover:bg-surface-muted"
-              )}
-            >
-              {item.name}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </details>
+        <span className={cn("text-[10px] text-navy-400 transition-transform", open && "rotate-180")}>▾</span>
+      </button>
+      {open && (
+        <ul className="absolute left-0 top-full z-30 mt-1 max-h-72 w-64 overflow-y-auto rounded-xl border border-border bg-surface p-1.5 shadow-lg shadow-navy-950/10">
+          {items.map((item) => (
+            <li key={item.id}>
+              <Link
+                href={item.href}
+                onClick={() => setOpen(false)}
+                className={cn(
+                  "block truncate rounded-lg px-3 py-1.5 text-sm",
+                  item.id === activeId
+                    ? "bg-brand-50 font-semibold text-brand-700"
+                    : "text-foreground hover:bg-surface-muted"
+                )}
+              >
+                {item.name}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 

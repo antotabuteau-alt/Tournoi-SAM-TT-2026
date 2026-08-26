@@ -19,6 +19,7 @@ export function PoolsPageClient({
   bestOfSets,
   playerCount,
   poolTargetSize,
+  canGenerateBracket,
   initialView,
 }: {
   orgSlug: string;
@@ -27,6 +28,7 @@ export function PoolsPageClient({
   bestOfSets: number;
   playerCount: number;
   poolTargetSize: number;
+  canGenerateBracket: boolean;
   initialView: View;
 }) {
   const [view, setView] = useState<View>(initialView);
@@ -73,6 +75,7 @@ export function PoolsPageClient({
         categoryId={categoryId}
         bestOfSets={bestOfSets}
         poolGroups={view.poolGroups}
+        canGenerateBracket={canGenerateBracket}
       />
       <ResetPoolsButton
         orgSlug={orgSlug}

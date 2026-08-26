@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { generateBracketAction } from "@/actions/bracket.actions";
 import { cn } from "@/lib/cn";
 import { Avatar } from "@/components/match-avatar";
+import { Button } from "@/components/ui/button";
 import { MatchScoreModal } from "../match-score-modal";
 
 interface MatchData {
@@ -65,13 +68,16 @@ export function AllPoolsBoard({
   categoryId,
   bestOfSets,
   poolGroups: initialPoolGroups,
+  canGenerateBracket = false,
 }: {
   orgSlug: string;
   tournamentId: string;
   categoryId: string;
   bestOfSets: number;
   poolGroups: PoolGroupData[];
+  canGenerateBracket?: boolean;
 }) {
+  const router = useRouter();
   const [poolGroups, setPoolGroups] = useState(initialPoolGroups);
   const [syncedProp, setSyncedProp] = useState(initialPoolGroups);
   if (initialPoolGroups !== syncedProp) {
@@ -83,6 +89,24 @@ export function AllPoolsBoard({
   const found = findMatch(poolGroups, selectedId);
   const selected = found?.match ?? null;
   const selectedPoolName = found?.poolName ?? "";
+
+  const allPoolsDone = poolGroups.every(
+    (g) => g.matches.length > 0 && g.matches.every((m) => m.status === "DONE" || m.status === "WALKOVER")
+  );
+  const [isGeneratingBracket, startGeneratingBracket] = useTransition();
+  const [bracketError, setBracketError] = useState<string | null>(null);
+
+  function handleGenerateBracket() {
+    setBracketError(null);
+    startGeneratingBracket(async () => {
+      const res = await generateBracketAction(orgSlug, tournamentId, categoryId);
+      if ("error" in res) {
+        setBracketError(res.error);
+        return;
+      }
+      router.push(`/${orgSlug}/tournaments/${tournamentId}/categories/${categoryId}/bracket`);
+    });
+  }
 
   function patchMatch(
     matchId: string,
@@ -102,7 +126,21 @@ export function AllPoolsBoard({
   }
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr] lg:items-start">
+    <div className="flex flex-col gap-5">
+      {canGenerateBracket && allPoolsDone && (
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-success-200 bg-gradient-to-r from-success-50 to-accent-50 p-5 shadow-sm shadow-success-500/10">
+          <div>
+            <p className="text-base font-bold text-success-700">🎉 Toutes les poules sont terminées !</p>
+            <p className="text-sm text-navy-500">Tu peux maintenant générer le tableau final directement d&apos;ici.</p>
+            {bracketError && <p className="mt-1 text-sm text-danger-600">{bracketError}</p>}
+          </div>
+          <Button variant="accent" onClick={handleGenerateBracket} disabled={isGeneratingBracket}>
+            🏆 {isGeneratingBracket ? "Génération..." : "Générer le tableau final"}
+          </Button>
+        </div>
+      )}
+
+      <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr] lg:items-start">
       <div className="flex flex-col gap-4">
         {poolGroups.map((g) => {
           const doneCount = g.matches.filter((m) => m.status === "DONE").length;
@@ -230,6 +268,7 @@ export function AllPoolsBoard({
             </ol>
           </div>
         ))}
+      </div>
       </div>
 
       {selected && (
